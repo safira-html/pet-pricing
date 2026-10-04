@@ -121,7 +121,7 @@ export default function Pilotagem() {
               <CirclePause size={16} className="mt-0.5 shrink-0" aria-hidden />
               <span>
                 O aprendizado tirou do piloto: {holds.map((l) => `${l.categoria} · ${l.canal}`).join(", ")}.{" "}
-                <Link href="/aprendizado" className="font-semibold underline">Ver por quê</Link>
+                <Link href="/aprendizado" className="font-semibold underline underline-offset-2 hover:decoration-2">Ver por quê</Link>
               </span>
             </p>
           )}
@@ -268,7 +268,7 @@ export default function Pilotagem() {
           <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-superficie md:hidden" aria-hidden />
         </div>
       </Card>
-      <p className="text-sm text-suave">Regras, exceções e vetos ficam registrados em <Link href="/aprendizado" className="text-roxo underline">Aprendizado</Link>.</p>
+      <p className="text-sm text-suave">Regras, exceções e vetos ficam registrados em <Link href="/aprendizado" className="text-roxo underline underline-offset-2 hover:text-roxo-800 hover:decoration-2">Aprendizado</Link>.</p>
     </div>
   );
 }

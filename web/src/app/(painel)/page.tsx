@@ -96,7 +96,7 @@ export default function VisaoGeral() {
           {comRampa > 0 && (
             <p className="mt-5 rounded-[10px] bg-revisar-bg p-3 text-sm text-revisar">
               <strong>{comRampa} {comRampa === 1 ? "caso precisaria" : "casos precisariam"}</strong> subir mais de {pct(p.parametros.R02, 0)} para chegar à margem mínima. A proposta da V2 é reajustar em etapas, com aprovação.{" "}
-              <Link href="/regras#rampa" className="font-semibold underline">Ver proposta</Link>
+              <Link href="/regras#rampa" className="font-semibold underline underline-offset-2 hover:decoration-2">Ver proposta</Link>
             </p>
           )}
         </Card>
@@ -124,7 +124,7 @@ export default function VisaoGeral() {
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <Card>
-          <Titulo eyebrow="Maior prioridade" acao={<Link href="/fila" className="text-sm font-semibold text-roxo">Ver todas</Link>}>
+          <Titulo eyebrow="Maior prioridade" acao={<Link href="/fila" className="rounded-[8px] px-2 py-1 text-sm font-semibold text-roxo hover:bg-roxo-50 hover:text-roxo-800">Ver todas</Link>}>
             Comece por aqui
           </Titulo>
           <ul className="divide-y divide-linha">
@@ -167,7 +167,7 @@ export default function VisaoGeral() {
           </p>
           <div className="mt-4 rounded-[10px] bg-roxo-50 p-3 text-sm">
             <span className="font-semibold text-tinta">{elegiveis}</span> itens poderiam ir para o piloto automático com o teto atual de {pct(p.piloto.teto, 0)}.{" "}
-            <Link href="/pilotagem" className="font-semibold text-roxo">Pilotagem</Link>
+            <Link href="/pilotagem" className="font-semibold text-roxo underline-offset-2 hover:underline">Pilotagem</Link>
           </div>
         </Card>
       </div>

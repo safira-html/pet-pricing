@@ -92,7 +92,7 @@ function Fila() {
             aria-selected={grupo === id}
             onClick={() => { const q = new URLSearchParams(sp.toString()); q.set("grupo", id); q.delete("acao"); router.replace(`${path}?${q}`, { scroll: false }); setSel(new Set()); }}
             className={clsx("flex items-center gap-3 rounded-[14px] border px-4 py-3 text-left transition-colors",
-              grupo === id ? "border-roxo bg-roxo-50 ring-1 ring-roxo" : "border-linha bg-superficie hover:border-roxo")}
+              grupo === id ? "border-roxo bg-roxo-50 ring-1 ring-roxo" : "border-linha bg-superficie hover:border-roxo hover:bg-roxo-50/50 hover:shadow-[0_4px_14px_rgba(61,35,88,0.08)]")}
           >
             <Icone size={20} className="text-roxo" aria-hidden />
             <span className="min-w-0">
@@ -178,14 +178,14 @@ function LinhaFila({ r, selecionado, podeRapido, onSel, onAbrir }: {
   const pos = posicaoMercado(r);
   const abaixoMin = r.margem.atual < r.margem.minima;
   return (
-    <li className={clsx("relative overflow-hidden rounded-[14px] border border-linha transition-shadow hover:shadow-md", d ? "bg-fundo" : "bg-superficie")}>
+    <li className={clsx("relative overflow-hidden rounded-[14px] border border-linha transition-all hover:border-roxo/40 hover:shadow-[0_6px_18px_rgba(61,35,88,0.08)]", d ? "bg-fundo" : "bg-superficie")}>
       <span className={clsx("absolute inset-y-0 left-0 w-1.5", BARRA[r.acao])} aria-hidden />
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 py-3.5 pr-3 pl-4 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:gap-x-4 sm:pr-4 sm:pl-5 lg:grid-cols-[auto_minmax(0,1fr)_minmax(250px,auto)_minmax(0,1.4fr)_auto]">
         <input type="checkbox" aria-label={`Selecionar ${r.produto}, ${r.canal}`} disabled={!podeRapido}
           className="size-[18px] accent-[var(--roxo)] disabled:invisible" checked={selecionado} onChange={(e) => onSel(e.target.checked)} />
 
-        <button onClick={onAbrir} className="min-w-0 text-left">
-          <span className="flex flex-wrap items-center gap-x-2 gap-y-1 font-semibold text-tinta"><span className="min-w-0 truncate">{r.produto}</span>{r.sintetico && <SinteticoTag />}</span>
+        <button onClick={onAbrir} className="group/nome min-w-0 rounded-[8px] text-left">
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-1 font-semibold text-tinta"><span className="min-w-0 truncate underline-offset-2 group-hover/nome:text-roxo-800 group-hover/nome:underline">{r.produto}</span>{r.sintetico && <SinteticoTag />}</span>
           <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-suave">{r.canal} · {r.sku} · curva {r.curva} <RiscoBadge risco={r.risco} /></span>
         </button>
 

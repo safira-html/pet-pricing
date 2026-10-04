@@ -177,7 +177,7 @@ function ResultadoEAprendizado({ r }: { r: Recomendacao }) {
           {r.categoria} · {r.canal}: {learning.measured} {learning.measured === 1 ? "mudança medida" : "mudanças medidas"} ({learning.improved} {verb(learning.improved, "melhorou", "melhoraram")}, {learning.worsened} {verb(learning.worsened, "piorou", "pioraram")}) e {learning.decisions} {verb(learning.decisions, "decisão", "decisões")} ({learning.rejected} {verb(learning.rejected, "rejeitada", "rejeitadas")}).
           {learning.effect === "hold" && !learning.dismissed && <strong className="text-piso"> O grupo está fora do piloto automático por aprendizado.</strong>}
           {learning.effect === "suggest" && <strong className="text-subir"> O grupo é candidato ao piloto automático.</strong>}{" "}
-          <a href="/aprendizado" className="text-roxo underline">Ver aprendizados</a>
+          <a href="/aprendizado" className="text-roxo underline underline-offset-2 hover:text-roxo-800 hover:decoration-2">Ver aprendizados</a>
         </p>
       )}
     </section>
@@ -215,7 +215,7 @@ function CustoMargem({ r }: { r: Recomendacao }) {
       </div>
       <p className="mt-3 text-xs text-suave">
         Margem em uso: {MARGIN_FORMULAS[formula].label.toLowerCase()}. Pela {MARGIN_FORMULAS[outra].label.toLowerCase()}, seria {pct(marginAt(r, r.preco_atual, outra))}.{" "}
-        <a href="/regras#margem" className="text-roxo underline">Por que isso importa</a>
+        <a href="/regras#margem" className="text-roxo underline underline-offset-2 hover:text-roxo-800 hover:decoration-2">Por que isso importa</a>
       </p>
     </section>
   );

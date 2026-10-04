@@ -93,6 +93,26 @@
     text-wrap: pretty;
   }
 
+  /* Tailwind v4 deixa botões com o cursor padrão; aqui todo controle clicável mostra a mãozinha (dica #30). */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="tab"],
+  [role="switch"]:not(:disabled),
+  [role="option"],
+  summary,
+  label:has(> input[type="radio"]),
+  label:has(> input[type="checkbox"]),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="range"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role="switch"]:disabled {
+    cursor: not-allowed;
+  }
+
   :focus-visible {
     outline: 2px solid var(--roxo);
     outline-offset: 2px;

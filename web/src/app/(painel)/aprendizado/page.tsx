@@ -85,7 +85,7 @@ function ImpactTab() {
                 : "Nenhuma mudança agendada esperando medição"}
             </p>
             <p className="text-sm text-suave">
-              Sem o ERP conectado, o protótipo simula as vendas dos {MEASUREMENT_DAYS} dias seguintes. <Link href="/integrations" className="text-roxo underline">Ver integrações</Link>
+              Sem o ERP conectado, o protótipo simula as vendas dos {MEASUREMENT_DAYS} dias seguintes. <Link href="/integrations" className="text-roxo underline underline-offset-2 hover:text-roxo-800 hover:decoration-2">Ver integrações</Link>
             </p>
             {ran != null && <p className="mt-1 text-sm font-medium text-subir">{ran} {ran === 1 ? "mudança medida" : "mudanças medidas"}. Os resultados estão abaixo.</p>}
           </div>
@@ -117,7 +117,7 @@ function ImpactTab() {
 
       {p.outcomes.length === 0 ? (
         <Vazio titulo="Ainda não há mudanças medidas">
-          Aprove recomendações na <Link href="/fila" className="text-roxo underline">fila de decisões</Link> ou agende mudanças pelo piloto automático. Depois, simule os {MEASUREMENT_DAYS} dias para ver o resultado de cada uma.
+          Aprove recomendações na <Link href="/fila" className="text-roxo underline underline-offset-2 hover:text-roxo-800 hover:decoration-2">fila de decisões</Link> ou agende mudanças pelo piloto automático. Depois, simule os {MEASUREMENT_DAYS} dias para ver o resultado de cada uma.
         </Vazio>
       ) : (
         <>
@@ -360,7 +360,7 @@ function HistoryTab() {
         ))}
       </div>
       {events.length === 0 ? (
-        <Vazio titulo="Nada registrado ainda">Toda decisão, medição, mudança de modo e veto aparece aqui com autor e horário. <Link href="/fila" className="text-roxo underline">Ir para a fila</Link></Vazio>
+        <Vazio titulo="Nada registrado ainda">Toda decisão, medição, mudança de modo e veto aparece aqui com autor e horário. <Link href="/fila" className="text-roxo underline underline-offset-2 hover:text-roxo-800 hover:decoration-2">Ir para a fila</Link></Vazio>
       ) : (
         <ol className="relative space-y-3 border-l-2 border-roxo-100 pl-5">
           {events.map((e) => (
@@ -368,7 +368,7 @@ function HistoryTab() {
               <span className={clsx("absolute top-1.5 -left-[27px] size-3 rounded-full ring-4 ring-superficie",
                 e.tipo === "veto" ? "bg-piso" : e.tipo === "piloto automático" ? "bg-roxo" : e.tipo === "decisão" ? "bg-limao" : e.tipo === "impacto" ? "bg-baixar" : "bg-linha-forte")} aria-hidden />
               <p><strong className="text-tinta">{e.autor}</strong> {e.texto}</p>
-              <p className="text-xs text-suave">{dataHoraBR(e.quando)} · {e.tipo}{e.recId && <> · <Link href={`/fila?item=${encodeURIComponent(e.recId)}`} className="text-roxo underline">abrir item</Link></>}</p>
+              <p className="text-xs text-suave">{dataHoraBR(e.quando)} · {e.tipo}{e.recId && <> · <Link href={`/fila?item=${encodeURIComponent(e.recId)}`} className="text-roxo underline underline-offset-2 hover:text-roxo-800 hover:decoration-2">abrir item</Link></>}</p>
             </li>
           ))}
         </ol>
