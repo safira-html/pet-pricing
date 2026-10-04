@@ -145,6 +145,8 @@ interface Ctx extends Estado {
   /** "local" = sem API configurada; "online" = estado e histórico salvos no servidor. */
   statusApi: StatusApi;
   sessaoId: string | null;
+  /** O servidor guarda estado e histórico (false em hospedagem serverless: fica no navegador). */
+  persistenciaServidor: boolean;
   temBaseEnviada: boolean;
   enviarBase: (arquivo: File) => Promise<{ ok: true; itens: number; avisos: number } | { ok: false; mensagem: string }>;
   decidir: (recId: string, tipo: TipoDecisao, opts: { preco?: number | null; justificativa?: string }) => void;
@@ -180,6 +182,7 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
   const [statusApi, setStatusApi] = useState<StatusApi>(apiEnabled ? "conectando" : "local");
   const versaoRef = useRef(0);
   const [tentativa, setTentativa] = useState(0);
+  const [persistenciaServidor, setPersistenciaServidor] = useState(false);
   const ctxRef = useRef({ sessaoId: null as string | null, perfil: null as Perfil | null, online: false });
   useEffect(() => {
     ctxRef.current = { sessaoId, perfil: estado.perfil, online: statusApi === "online" };
@@ -211,6 +214,18 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
     let cancelado = false;
     (async () => {
       try {
+        const saude = await api.health();
+        if (!saude.sessions) {
+          // Servidor sem sessões: usa o motor (bases e envio de planilha) e guarda o estado no navegador.
+          const [baseOficial, baseSintetica] = await Promise.all([api.base("oficial"), api.base("sintetico")]);
+          if (cancelado) return;
+          const enviadaLocal = lerEnviadaLocal();
+          setBasesRemotas({ oficial: baseOficial, sintetico: baseSintetica, ...(enviadaLocal ? { enviada: enviadaLocal } : {}) });
+          setPersistenciaServidor(false);
+          setStatusApi("online");
+          return;
+        }
+        setPersistenciaServidor(true);
         let id: string | null = null;
         try {
           id = localStorage.getItem(CHAVE_SESSAO);
@@ -639,11 +654,14 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
       },
       statusApi,
       sessaoId,
+      persistenciaServidor,
       temBaseEnviada: !!basesRemotas.enviada,
       enviarBase: async (arquivo) => {
-        if (!sessaoId || statusApi !== "online") return { ok: false, mensagem: "O servidor não está conectado. Envio de base só funciona com a API." };
+        if (statusApi !== "online") return { ok: false, mensagem: "O servidor não está conectado. Envio de base só funciona com a API." };
         try {
-          const payload = await api.sendUpload(sessaoId, arquivo, estado.perfil ?? "visitante");
+          const payload = sessaoId
+            ? await api.sendUpload(sessaoId, arquivo, estado.perfil ?? "visitante")
+            : await api.process(arquivo, estado.perfil ?? "visitante");
           setBasesRemotas((b) => ({ ...b, enviada: payload }));
           try {
             localStorage.setItem(CHAVE_ENVIADA, JSON.stringify(payload));
@@ -687,7 +705,7 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
       },
       fecharAviso,
     }),
-    [estado, base, recs, carregado, pode, modoDe, previaPiloto, registrar, autor, regraCobre, eligibility, learnings, learningFor, elasticity, porId, fecharAviso, statusApi, sessaoId, basesRemotas],
+    [estado, base, recs, carregado, pode, modoDe, previaPiloto, registrar, autor, regraCobre, eligibility, learnings, learningFor, elasticity, porId, fecharAviso, statusApi, sessaoId, basesRemotas, persistenciaServidor],
   );
 
   return <Contexto.Provider value={valor}>{children}</Contexto.Provider>;

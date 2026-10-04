@@ -149,7 +149,7 @@ function EnvioBase({ gestor }: { gestor: boolean }) {
           </p>
           <p className={clsx("mt-1 inline-flex items-center gap-1.5 text-xs", online ? "text-subir" : "text-suave")}>
             <span className={clsx("size-2 rounded-full", online ? "bg-subir" : p.statusApi === "conectando" ? "bg-revisar" : "bg-linha-forte")} aria-hidden />
-            {online ? "Servidor conectado: decisões e histórico salvos na sua sessão" : p.statusApi === "conectando" ? "Conectando ao servidor…" : p.statusApi === "offline" ? "Servidor indisponível: o protótipo segue só no navegador" : "Sem servidor configurado: o protótipo roda só no navegador"}
+            {online ? (p.persistenciaServidor ? "Servidor conectado: decisões e histórico salvos na sua sessão" : "Servidor conectado: o motor roda no servidor e as decisões ficam salvas neste navegador") : p.statusApi === "conectando" ? "Conectando ao servidor…" : p.statusApi === "offline" ? "Servidor indisponível: o protótipo segue só no navegador" : "Sem servidor configurado: o protótipo roda só no navegador"}
           </p>
           {resultado && (
             <p role="status" className={clsx("mt-2 text-sm", resultado.ok ? "text-subir" : "text-piso")}>{resultado.texto}</p>

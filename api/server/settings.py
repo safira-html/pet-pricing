@@ -26,6 +26,9 @@ class Settings:
     llm_base_url: str = field(default_factory=lambda: os.getenv("PET_LLM_BASE_URL", ""))
     llm_model: str = field(default_factory=lambda: os.getenv("PET_LLM_MODEL", "local"))
     llm_timeout_seconds: float = field(default_factory=lambda: float(os.getenv("PET_LLM_TIMEOUT_SECONDS", "20")))
+    # Sessões em SQLite precisam de disco compartilhado. Em funções serverless (Vercel), cada instância
+    # tem o seu /tmp, então o padrão lá é não guardar sessão: o estado fica no navegador.
+    sessions_enabled: bool = field(default_factory=lambda: os.getenv("PET_SESSIONS_ENABLED", "0" if os.getenv("VERCEL") else "1") == "1")
 
 
 def get_settings() -> Settings:

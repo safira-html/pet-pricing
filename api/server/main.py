@@ -90,6 +90,8 @@ def config() -> Settings:
 
 
 def require_session(session_id: str) -> str:
+    if not settings.sessions_enabled:
+        raise HTTPException(503, "Este servidor não guarda sessões; o estado fica no navegador.")
     if not store.exists(session_id):
         raise HTTPException(404, "Sessão não encontrada ou expirada. Recarregue a página para começar outra.")
     return session_id
@@ -132,7 +134,28 @@ class ExplainIn(BaseModel):
 
 @app.get("/api/health")
 def health(cfg: Settings = Depends(config)):
-    return {"status": "ok", "engine_version": ENGINE_VERSION, "llm": bool(cfg.llm_base_url)}
+    return {"status": "ok", "engine_version": ENGINE_VERSION, "llm": bool(cfg.llm_base_url), "sessions": cfg.sessions_enabled}
+
+
+def process_workbook(raw: bytes, filename: str) -> dict:
+    """Roda o motor sobre a planilha enviada e devolve a base no formato do front."""
+    try:
+        return build_payload(raw, filename, "enviada")
+    except ValueError as exc:  # mensagens do validador do motor, em português
+        raise HTTPException(422, str(exc)[:300]) from exc
+    except Exception as exc:  # planilha fora do modelo quebra em pontos diferentes do pandas/openpyxl
+        raise HTTPException(422, "Não consegui ler a planilha. Use o mesmo modelo de abas e colunas da base do desafio.") from exc
+
+
+@app.post("/api/process", status_code=201)
+def process_base(file: UploadFile = File(...), x_profile: str = Header(default="visitante"), cfg: Settings = Depends(config)):
+    """Envio sem sessão no servidor: o front guarda a base processada no navegador."""
+    if x_profile != "gestor":
+        raise HTTPException(403, "Só o gestor envia uma base nova.")
+    raw = file.file.read(int(cfg.max_upload_mb * 1024 * 1024) + 1)
+    if len(raw) > cfg.max_upload_mb * 1024 * 1024:
+        raise HTTPException(413, f"Envie um arquivo de até {cfg.max_upload_mb:g} MB.")
+    return process_workbook(raw, file.filename or "base.xlsx")
 
 
 @app.get("/api/bases/{scenario}")
@@ -142,6 +165,8 @@ def get_base(scenario: Scenario):
 
 @app.post("/api/sessions", status_code=201)
 def create_session():
+    if not settings.sessions_enabled:
+        raise HTTPException(503, "Este servidor não guarda sessões; o estado fica no navegador.")
     return {"session_id": store.create()}
 
 
@@ -202,12 +227,7 @@ def upload_base(  # síncrono de propósito: o FastAPI roda em thread e não tra
     if len(raw) > cfg.max_upload_mb * 1024 * 1024:
         raise HTTPException(413, f"Envie um arquivo de até {cfg.max_upload_mb:g} MB.")
     filename = file.filename or "base.xlsx"
-    try:
-        payload = build_payload(raw, filename, "enviada")
-    except ValueError as exc:  # mensagens do validador do motor, em português
-        raise HTTPException(422, str(exc)[:300]) from exc
-    except Exception as exc:  # planilha fora do modelo quebra em pontos diferentes do pandas/openpyxl
-        raise HTTPException(422, "Não consegui ler a planilha. Use o mesmo modelo de abas e colunas da base do desafio.") from exc
+    payload = process_workbook(raw, filename)
     sha = hashlib.sha256(raw).hexdigest()
     store.save_upload(session_id, filename, sha, payload)
     store.append_event(session_id, "Sistema", "sistema", "base", f"Base “{filename}” enviada e processada pelo motor ({len(payload['recomendacoes'])} itens, sha256 {sha[:12]}…).", None)

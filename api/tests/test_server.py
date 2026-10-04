@@ -181,3 +181,22 @@ def test_oversized_body_is_rejected_before_reading():
     sid = new_session()
     response = client.put(f"/api/sessions/{sid}/state", content=b"x" * 10, headers={"Content-Type": "application/json", "Content-Length": str(4 * 1024 * 1024)})
     assert response.status_code == 413
+
+
+def test_process_without_session_requires_manager():
+    official = (ROOT / "data" / "base-oficial.xlsx").read_bytes()
+    files = {"file": ("base.xlsx", official, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
+    assert client.post("/api/process", files=files).status_code == 403
+    ok = client.post("/api/process", files=files, headers={"X-Profile": "gestor"})
+    assert ok.status_code == 201 and len(ok.json()["recomendacoes"]) == 120
+
+
+def test_sessions_disabled_returns_503():
+    from server import main as m
+    original = m.settings
+    m.settings = Settings(sessions_enabled=False)
+    try:
+        assert client.post("/api/sessions").status_code == 503
+        assert client.get("/api/health").json()["sessions"] is False
+    finally:
+        m.settings = original

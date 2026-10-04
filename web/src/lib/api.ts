@@ -39,7 +39,7 @@ export interface ExplainResult {
 }
 
 export const api = {
-  health: () => call<{ status: string; engine_version: string; llm: boolean }>("/api/health"),
+  health: () => call<{ status: string; engine_version: string; llm: boolean; sessions: boolean }>("/api/health"),
   base: (scenario: "oficial" | "sintetico") => call<BaseDados>(`/api/bases/${scenario}`),
   createSession: () => call<{ session_id: string }>("/api/sessions", { method: "POST" }),
   session: (id: string) => call<{ session_id: string; has_upload: boolean }>(`/api/sessions/${id}`),
@@ -53,6 +53,12 @@ export const api = {
     const form = new FormData();
     form.append("file", file);
     return call<BaseDados & { avisos_importacao?: unknown[] }>(`/api/sessions/${id}/upload`, { method: "POST", body: form, headers: { "X-Profile": profile } });
+  },
+  /** Processa a planilha sem sessão no servidor (hospedagem serverless). */
+  process: (file: File, profile: Perfil) => {
+    const form = new FormData();
+    form.append("file", file);
+    return call<BaseDados & { avisos_importacao?: unknown[] }>("/api/process", { method: "POST", body: form, headers: { "X-Profile": profile } });
   },
   explain: (body: { product: string; channel: string; action: string; facts: string[] }) => call<ExplainResult>("/api/explain", json("POST", body)),
 };
