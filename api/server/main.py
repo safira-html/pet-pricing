@@ -34,7 +34,14 @@ Profile = Literal["analista", "gestor", "visitante", "sistema"]
 MAX_STATE_BYTES = 2 * 1024 * 1024
 
 settings = get_settings()
-store = SessionStore(settings.sessions_dir, settings.session_ttl_hours)
+def make_store(cfg: Settings):
+    if cfg.database_url:
+        from .sessions_pg import PostgresSessionStore  # só importa o driver quando há Postgres
+        return PostgresSessionStore(cfg.database_url, cfg.session_ttl_hours)
+    return SessionStore(cfg.sessions_dir, cfg.session_ttl_hours)
+
+
+store = make_store(settings)
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     """Calcula as bases de demonstração em segundo plano, para o primeiro visitante não esperar."""
