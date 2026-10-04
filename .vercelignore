@@ -1,5 +1,4 @@
-# Projeto da API na Vercel (raiz do repositório): só o que o Python precisa.
-web/
+# Arquivos que não precisam ir para a Vercel (o front em web/ e a API na raiz continuam).
 docs/
 deploy/
 api/tests/
@@ -7,3 +6,5 @@ api/scripts/
 api/.venv/
 api/Base de Dados - Popular Pet.xlsx
 **/__pycache__/
+**/node_modules/
+web/.next/

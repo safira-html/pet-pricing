@@ -4,8 +4,10 @@ import type { BaseDados, Perfil } from "./types";
  * Cliente da API (api/server). Sem NEXT_PUBLIC_API_URL o front roda sozinho,
  * com as bases embutidas e o estado só no navegador.
  */
-export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/$/, "");
-export const apiEnabled = API_URL.length > 0;
+const RAW_API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
+/** "/" = API no mesmo domínio (Vercel com serviços: o site em / e a API em /api). */
+export const API_URL = RAW_API_URL.replace(/\/$/, "");
+export const apiEnabled = RAW_API_URL.length > 0;
 
 export class ApiError extends Error {
   constructor(public status: number, message: string, public detail?: unknown) {
