@@ -219,8 +219,25 @@ function LearningsTab() {
     humanas.filter((d) => d.justificativa).reduce<Record<string, number>>((acc, d) => ({ ...acc, [d.justificativa]: (acc[d.justificativa] ?? 0) + 1 }), {}),
   ).sort((a, b) => b[1] - a[1]);
 
+  const m = metricas(p.recs, p.decisoes);
+
   return (
     <div className="space-y-6">
+      <div className="grid gap-4 sm:grid-cols-4">
+        {[
+          { r: "Decisões registradas", v: String(humanas.length) },
+          { r: "Aceitação das recomendações", v: m.aceitacao == null ? "—" : pct(m.aceitacao, 0) },
+          { r: "Tempo médio por decisão", v: m.tempoMedioSeg == null ? "—" : `${Math.round(m.tempoMedioSeg)} s` },
+          { r: "Mudanças do piloto automático", v: String(p.agendamentos.filter((a) => a.origem === "piloto automático").length) },
+        ].map((x) => (
+          <Card key={x.r} className="p-4">
+            <p className="text-xs text-suave">{x.r}</p>
+            <p className="num mt-1 font-display text-2xl font-semibold text-tinta">{x.v}</p>
+          </Card>
+        ))}
+      </div>
+      <p className="-mt-3 text-xs text-suave">Linha de base informada na base do desafio (fictícia): 67% na faixa competitiva e 18 h por semana de revisão manual.</p>
+
       <Card>
         <Titulo eyebrow="Por categoria e canal">O que o sistema aprendeu</Titulo>
         <p className="max-w-[68ch] text-sm text-texto">

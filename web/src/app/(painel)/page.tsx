@@ -1,190 +1,237 @@
 "use client";
 
+import clsx from "clsx";
+import { ArrowRight, BrainCircuit, CalendarClock, Check, ChevronRight, Hand, Minus, Plane, TrendingDown, TrendingUp, Zap, type LucideIcon } from "lucide-react";
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, Ban, Info } from "lucide-react";
-import { Movimento } from "@/components/PriceRuler";
-import { AcaoBadge, Card, SinteticoTag, Titulo } from "@/components/ui";
-import { ACAO_ROTULO, resumoCurto, rotuloAlerta } from "@/lib/explain";
-import { dataBR, inteiro, pct, pp } from "@/lib/format";
-import { FAIXA_COMPETITIVA, metricas } from "@/lib/metricas";
+import { AcaoBadge, Botao, Card, SinteticoTag, Titulo, botaoClasses } from "@/components/ui";
+import { rotuloAlerta } from "@/lib/explain";
+import { dataBR, inteiro, moeda, pct } from "@/lib/format";
+import { MARGIN_FORMULAS } from "@/lib/margin";
+import { FAIXA_COMPETITIVA } from "@/lib/metricas";
+import { monthlyGain, queueGroup } from "@/lib/queue";
 import { usePricing } from "@/lib/store";
-import type { Acao, Canal } from "@/lib/types";
+import type { Acao, Canal, Recomendacao } from "@/lib/types";
 
-const ACOES: Acao[] = ["SUBIR", "BAIXAR", "MANTER", "REVISAR"];
-const CANAIS: Canal[] = ["Loja física", "E-commerce", "Marketplace"];
-const COR: Record<Acao, string> = { SUBIR: "bg-subir", BAIXAR: "bg-baixar", MANTER: "bg-manter", REVISAR: "bg-revisar" };
+const CHANNELS: Canal[] = ["Loja física", "E-commerce", "Marketplace"];
 
-export default function VisaoGeral() {
+/** As perguntas que o enunciado do desafio faz; cada cartão responde uma. */
+const QUESTIONS: { action: Acao; question: string; icon: LucideIcon; tone: string }[] = [
+  { action: "SUBIR", question: "Onde subir?", icon: TrendingUp, tone: "text-subir bg-subir-bg" },
+  { action: "BAIXAR", question: "Onde baixar?", icon: TrendingDown, tone: "text-baixar bg-baixar-bg" },
+  { action: "MANTER", question: "O que não mexer?", icon: Minus, tone: "text-manter bg-manter-bg" },
+  { action: "REVISAR", question: "O que precisa de uma pessoa?", icon: Hand, tone: "text-revisar bg-revisar-bg" },
+];
+
+/** Motivo principal de um item que precisa de revisão, para agrupar no cartão. */
+function reviewReason(r: Recomendacao) {
+  if (r.preco_sugerido == null && r.proposta.rampa) return "Rampa de reajuste";
+  const alert = r.alertas.find((a) => a.tipo === "bloqueio") ?? r.alertas.find((a) => a.tipo === "aprovacao");
+  if (!alert) return "Outros sinais";
+  if (alert.codigo === "R09") return "Promoção ativa";
+  if (alert.codigo === "R06" || alert.codigo === "R10") return "Concorrência";
+  return rotuloAlerta(alert).replace(/^R\d+ · /, "");
+}
+
+export default function Overview() {
   const p = usePricing();
-  const m = metricas(p.recs, p.decisoes);
-  const pendentes = p.recs.filter((r) => !p.decisaoDe(r.id));
-  const porAcao = (lista: typeof p.recs) => Object.fromEntries(ACOES.map((a) => [a, lista.filter((r) => r.acao === a).length])) as Record<Acao, number>;
-  const total = porAcao(p.recs);
-  const semPreco = p.recs.filter((r) => r.preco_sugerido == null).length;
-  const comRampa = p.recs.filter((r) => r.proposta.rampa).length;
-  const elegiveis = p.recs.filter((r) => p.eligibility(r).elegivel).length;
-  const proximas = [...pendentes].sort((a, b) => b.prioridade - a.prioridade).slice(0, 5);
+  const decided = new Set(p.decisoes.map((d) => d.recId));
+  const pending = p.recs.filter((r) => !decided.has(r.id));
+  const quick = pending.filter((r) => queueGroup(r, false) === "rapida");
+  const gains = new Map(pending.map((r) => [r.id, r.acao === "SUBIR" || r.acao === "BAIXAR" ? monthlyGain(r, p.elasticity) : null]));
+  const atStake = [...gains.values()].reduce<number>((s, g) => s + (g ?? 0), 0);
+  const belowMin = p.recs.filter((r) => r.margem.atual < r.margem.minima - 1e-9).length;
+  const humanDecisions = p.decisoes.filter((d) => d.perfil !== "sistema" && d.segundosAteDecidir != null);
+  const avgSeconds = humanDecisions.length ? humanDecisions.reduce((s, d) => s + (d.segundosAteDecidir ?? 0), 0) / humanDecisions.length : null;
+  const canQuickApprove = (r: Recomendacao) => p.pode("decidir") && queueGroup(r, false) === "rapida" && (r.risco !== "Alto" || p.pode("risco_alto"));
 
-  const grupos = new Map<string, { texto: string; tipo: string; n: number }>();
-  p.recs.forEach((r) =>
-    r.alertas.forEach((a) => {
-      const chave = a.codigo ?? (a.texto.startsWith("Piso") ? "PISO" : a.texto);
-      const g = grupos.get(chave) ?? { texto: a.texto.startsWith("Regra “") ? a.texto.replace(/ exige aprovação\.$/, "") : rotuloAlerta(a), tipo: a.tipo, n: 0 };
-      g.n++;
-      grupos.set(chave, g);
-    }),
-  );
-  const alertas = [...grupos.values()].sort((a, b) => b.n - a.n);
+  const opportunities = pending
+    .filter((r) => (gains.get(r.id) ?? 0) > 0)
+    .sort((a, b) => (gains.get(b.id) ?? 0) - (gains.get(a.id) ?? 0))
+    .slice(0, 6);
+
+  // Canal com a maior distância entre margem média e mínima média: a leitura principal do cartão.
+  const worst = CHANNELS.map((c) => {
+    const list = p.recs.filter((r) => r.canal === c);
+    if (!list.length) return null;
+    const avg = list.reduce((s, r) => s + r.margem.atual, 0) / list.length;
+    const min = list.reduce((s, r) => s + r.margem.minima, 0) / list.length;
+    return { channel: c, gap: min - avg, fee: p.marginFormula === "gross" ? 0 : list[0].custo.taxa_canal };
+  }).filter((x): x is { channel: Canal; gap: number; fee: number } => !!x && x.gap > 0).sort((a, b) => b.gap - a.gap)[0];
+
+  const scenario = p.cenario === "oficial" ? "Base oficial do desafio" : p.cenario === "sintetico" ? "Cenários sintéticos" : `Base enviada (${p.base.fonte})`;
+  const vetoPending = p.agendamentos.filter((a) => a.status === "aguardando veto").length;
+  const holds = p.learnings.filter((l) => l.effect === "hold" && !l.dismissed).length;
+  const improved = p.outcomes.filter((o) => o.verdict === "improved").length;
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
+      {/* Hoje: o tamanho do trabalho, o dinheiro em jogo e o próximo passo */}
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm text-suave">
-            {p.cenario === "oficial" ? "Base oficial do desafio" : p.cenario === "sintetico" ? "Cenários sintéticos" : `Base enviada (${p.base.fonte})`} · referência {dataBR(p.base.data_referencia)}
-          </p>
-          <h1 className="mt-1 text-2xl font-semibold sm:text-3xl">
-            {pendentes.length} preços para decidir
-          </h1>
+          <p className="flex items-center gap-2 text-sm text-suave">{scenario} · referência {dataBR(p.base.data_referencia)} {p.cenario === "sintetico" && <SinteticoTag />}</p>
+          <h1 className="mt-1 text-2xl font-semibold sm:text-3xl">Hoje</h1>
         </div>
-        <Link href="/fila" className="inline-flex h-11 items-center gap-2 rounded-[10px] bg-roxo px-4 text-sm font-semibold text-white hover:bg-roxo-700">
-          Abrir a fila <ArrowRight size={16} />
-        </Link>
+        {quick.length > 0 ? (
+          <Link href="/fila?grupo=rapida" className={botaoClasses("primario")}>
+            <Zap size={16} aria-hidden /> Começar pela aprovação rápida ({quick.length})
+          </Link>
+        ) : (
+          <Link href="/fila" className={botaoClasses("primario")}>Abrir a fila <ArrowRight size={16} aria-hidden /></Link>
+        )}
       </header>
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
-        {ACOES.map((a) => (
-          <Link key={a} href={`/fila?acao=${a}`} className="group rounded-[15px] border border-linha bg-superficie p-4 transition-all hover:border-roxo hover:shadow-[0_6px_18px_rgba(61,35,88,0.08)] active:scale-[0.99]">
-            <span className="flex items-center justify-between">
-              <AcaoBadge acao={a} />
-              <ArrowRight size={16} className="text-suave transition-transform group-hover:translate-x-0.5 group-hover:text-roxo" aria-hidden />
-            </span>
-            <p className="num mt-3 font-display text-3xl font-semibold text-tinta">{total[a]}</p>
-            <p className="text-xs text-suave">
-              {a === "SUBIR" && "recompõem margem ou acompanham o mercado"}
-              {a === "BAIXAR" && "ganham competitividade com margem folgada"}
-              {a === "MANTER" && "já estão no ponto de equilíbrio"}
-              {a === "REVISAR" && `${semPreco} sem preço possível dentro de ${pct(p.parametros.R02, 0)}`}
-            </p>
-          </Link>
-        ))}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Stat label="Preços para decidir" value={inteiro(pending.length)}
+          hint={avgSeconds ? `cerca de ${Math.max(1, Math.round((pending.length * avgSeconds) / 60))} min no seu ritmo atual` : `${quick.length} com aprovação em um clique`} />
+        <Stat label="Margem em jogo por mês" value={moeda(atStake)} tone={atStake >= 0 ? "text-subir" : "text-piso"}
+          hint="se as sugestões de subir e baixar forem aprovadas (estimativa)" />
+        <Stat label="Itens abaixo da margem mínima" value={`${inteiro(belowMin)} de ${p.recs.length}`} tone={belowMin ? "text-piso" : "text-tinta"}
+          hint={MARGIN_FORMULAS[p.marginFormula].label.toLowerCase()} href="/regras#margem" />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+      {/* As perguntas do desafio, cada uma levando para a fila filtrada */}
+      <section aria-labelledby="perguntas">
+        <h2 id="perguntas" className="mb-3 text-lg font-semibold">O que o motor recomenda</h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {QUESTIONS.map(({ action, question, icon: Icon, tone }) => {
+            const items = pending.filter((r) => r.acao === action);
+            const gain = items.reduce((s, r) => s + (gains.get(r.id) ?? 0), 0);
+            const reasons = action === "REVISAR"
+              ? Object.entries(items.reduce<Record<string, number>>((acc, r) => { const k = reviewReason(r); acc[k] = (acc[k] ?? 0) + 1; return acc; }, {})).sort((a, b) => b[1] - a[1]).slice(0, 3)
+              : [];
+            const quickHere = items.filter((r) => queueGroup(r, false) === "rapida").length;
+            return (
+              <Link key={action} href={`/fila?acao=${action}`}
+                className="group flex flex-col rounded-[15px] border border-linha bg-superficie p-5 transition-all hover:border-roxo hover:shadow-[0_6px_18px_rgba(61,35,88,0.08)] active:scale-[0.99]">
+                <span className="flex items-center justify-between">
+                  <span className={clsx("grid size-9 place-items-center rounded-[10px]", tone)}><Icon size={18} aria-hidden /></span>
+                  <ArrowRight size={16} className="text-suave transition-transform group-hover:translate-x-0.5 group-hover:text-roxo" aria-hidden />
+                </span>
+                <span className="mt-3 text-sm font-medium text-texto">{question}</span>
+                <span className="num font-display text-3xl font-semibold text-tinta">{items.length}</span>
+                <span className="mt-1 text-sm text-suave">
+                  {action === "SUBIR" && (items.length ? <>{moeda(gain)}/mês a mais · {quickHere} em um clique</> : "Nenhum item para subir")}
+                  {action === "BAIXAR" && (items.length ? <>{gain >= 0 ? `${moeda(gain)}/mês a mais` : `${moeda(gain)}/mês, ganhando competitividade`}</> : "Nenhum item acima do mercado com margem folgada")}
+                  {action === "MANTER" && (items.length ? "o preço já equilibra margem e mercado" : "Nenhum item no ponto de equilíbrio")}
+                  {action === "REVISAR" && (items.length ? reasons.map(([k, n]) => `${n} ${k.toLowerCase()}`).join(" · ") : "Nada pede revisão")}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      <div className="grid gap-6 lg:grid-cols-[1.35fr_1fr]">
         <Card>
-          <Titulo eyebrow="Por canal">Como as recomendações se distribuem</Titulo>
-          <div className="space-y-4">
-            {CANAIS.map((c) => {
-              const lista = p.recs.filter((r) => r.canal === c);
-              const n = porAcao(lista);
+          <Titulo eyebrow="Maior retorno primeiro" acao={<Link href="/fila" className="rounded-[8px] px-2 py-1 text-sm font-semibold text-roxo hover:bg-roxo-50 hover:text-roxo-800">Ver a fila</Link>}>
+            Maiores oportunidades
+          </Titulo>
+          {opportunities.length === 0 ? (
+            <p className="text-sm text-suave">Nenhuma sugestão pendente aumenta a contribuição. Veja os itens que pedem revisão.</p>
+          ) : (
+            <ul className="divide-y divide-linha">
+              {opportunities.map((r) => (
+                <li key={r.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
+                  <Link href={`/fila?item=${encodeURIComponent(r.id)}`} className="group min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-tinta underline-offset-2 group-hover:text-roxo-800 group-hover:underline">{r.produto}</span>
+                    <span className="text-xs text-suave">{r.canal} · {moeda(r.preco_atual)} → {moeda(r.preco_sugerido)} ({pct(r.variacao, 1, true)})</span>
+                  </Link>
+                  <span className="num text-right text-sm font-semibold text-subir">+{moeda(gains.get(r.id))}<span className="block text-xs font-normal text-suave">por mês</span></span>
+                  {canQuickApprove(r) ? (
+                    <Botao variante="secundario" className="h-10 px-3" onClick={() => p.decidir(r.id, "aprovar", { preco: r.preco_sugerido })} aria-label={`Aprovar ${r.produto}, ${r.canal}`}>
+                      <Check size={16} aria-hidden /> Aprovar
+                    </Botao>
+                  ) : (
+                    <Link href={`/fila?item=${encodeURIComponent(r.id)}`} className={clsx(botaoClasses("fantasma"), "h-10 px-3")} aria-label={`Abrir ${r.produto}, ${r.canal}`}>
+                      <AcaoBadge acao={r.acao} /> <ChevronRight size={16} aria-hidden />
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-3 text-xs text-suave">Ganho estimado com as vendas dos últimos 3 meses e a sensibilidade a preço de cada categoria.</p>
+        </Card>
+
+        <Card>
+          <Titulo eyebrow="Saúde por canal">Margem hoje × mínima</Titulo>
+          <ul className="space-y-5">
+            {CHANNELS.map((c) => {
+              const list = p.recs.filter((r) => r.canal === c);
+              if (!list.length) return null;
+              const avg = list.reduce((s, r) => s + r.margem.atual, 0) / list.length;
+              const min = list.reduce((s, r) => s + r.margem.minima, 0) / list.length;
+              const below = list.filter((r) => r.margem.atual < r.margem.minima - 1e-9).length;
+              const withMarket = list.filter((r) => r.preco_mercado != null);
+              const inBand = withMarket.filter((r) => Math.abs(r.preco_atual / r.preco_mercado! - 1) <= FAIXA_COMPETITIVA).length;
+              const scale = 0.45;
               return (
-                <div key={c}>
-                  <div className="mb-1.5 flex justify-between text-sm">
+                <li key={c}>
+                  <div className="flex items-baseline justify-between text-sm">
                     <span className="font-medium text-tinta">{c}</span>
-                    <span className="text-suave">{lista.length} produtos</span>
+                    <span className={clsx("num font-semibold", avg < min ? "text-piso" : "text-subir")}>{pct(avg)}</span>
                   </div>
-                  <div className="flex h-3 overflow-hidden rounded-full bg-fundo" role="img" aria-label={ACOES.map((a) => `${ACAO_ROTULO[a]} ${n[a]}`).join(", ")}>
-                    {ACOES.map((a) => n[a] > 0 && <div key={a} className={COR[a]} style={{ width: `${(n[a] / lista.length) * 100}%` }} />)}
+                  {/* barra = margem média; risco vertical = mínima média */}
+                  <div className="relative mt-1.5 h-2.5 rounded-full bg-fundo" role="img" aria-label={`Margem média ${pct(avg)}, mínima média ${pct(min)}`}>
+                    <div className={clsx("h-full rounded-full", avg < min ? "bg-piso" : "bg-subir")} style={{ width: `${Math.max(0, Math.min(1, avg / scale)) * 100}%` }} />
+                    <span className="absolute -top-1 h-[18px] w-0.5 rounded bg-tinta" style={{ left: `${Math.min(1, min / scale) * 100}%` }} aria-hidden />
                   </div>
-                  <p className="mt-1 text-xs text-suave">
-                    {ACOES.filter((a) => n[a]).map((a) => `${ACAO_ROTULO[a]} ${n[a]}`).join(" · ")}
+                  <p className="mt-1.5 text-xs text-suave">
+                    mínima média {pct(min)} · <span className={below ? "font-medium text-piso" : ""}>{below} de {list.length} abaixo</span> · {withMarket.length ? `${pct(inBand / withMarket.length, 0)} na faixa competitiva` : "sem mercado"}
                   </p>
-                </div>
+                </li>
               );
             })}
-          </div>
-          {comRampa > 0 && (
-            <p className="mt-5 rounded-[10px] bg-revisar-bg p-3 text-sm text-revisar">
-              <strong>{comRampa} {comRampa === 1 ? "caso precisaria" : "casos precisariam"}</strong> subir mais de {pct(p.parametros.R02, 0)} para chegar à margem mínima. A proposta da V2 é reajustar em etapas, com aprovação.{" "}
-              <Link href="/regras#rampa" className="font-semibold underline underline-offset-2 hover:decoration-2">Ver proposta</Link>
+          </ul>
+          <p className="mt-4 flex items-center gap-2 text-xs text-suave">
+            <span className="inline-block h-3 w-0.5 rounded bg-tinta" aria-hidden /> margem mínima média do canal · barra = margem média hoje
+          </p>
+          {worst && (
+            <p className="mt-4 rounded-[10px] bg-fundo p-3 text-sm text-texto">
+              <strong className="text-tinta">{worst.channel}</strong> é o canal mais distante da mínima: na média, {(worst.gap * 100).toFixed(1).replace(".", ",")} pontos percentuais abaixo
+              {worst.fee > 0 ? `, pesando a taxa de ${pct(worst.fee, 0)} do canal.` : "."}
             </p>
           )}
         </Card>
-
-        <Card>
-          <Titulo eyebrow="Medido nesta sessão">Impacto das suas decisões</Titulo>
-          <dl className="space-y-4 text-sm">
-            <Metrica rotulo={`Na faixa competitiva (até ${pct(FAIXA_COMPETITIVA, 0)} do mercado)`} hoje={pct(m.faixaHoje, 0)} depois={pct(m.faixaDepois, 0)} delta={pp(m.faixaDepois - m.faixaHoje)} />
-            <Metrica rotulo={p.marginFormula === "contribution" ? "Margem média de contribuição" : "Margem bruta média"} hoje={pct(m.margemHoje)} depois={pct(m.margemDepois)} delta={pp(m.margemDepois - m.margemHoje)} />
-            <Metrica rotulo="Itens abaixo do preço mínimo" hoje={inteiro(m.abaixoPisoHoje)} depois={inteiro(m.abaixoPisoDepois)} delta={m.abaixoPisoDepois !== m.abaixoPisoHoje ? `${m.abaixoPisoDepois > m.abaixoPisoHoje ? "+" : "−"}${Math.abs(m.abaixoPisoDepois - m.abaixoPisoHoje)}` : undefined} />
-            <div className="grid grid-cols-2 gap-3 border-t border-linha pt-4">
-              <div>
-                <dt className="text-xs text-suave">Aceitação das recomendações</dt>
-                <dd className="num font-display text-xl font-semibold text-tinta">{m.aceitacao == null ? "—" : pct(m.aceitacao, 0)}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-suave">Tempo médio por decisão</dt>
-                <dd className="num font-display text-xl font-semibold text-tinta">{m.tempoMedioSeg == null ? "—" : `${Math.round(m.tempoMedioSeg)} s`}</dd>
-              </div>
-            </div>
-          </dl>
-          <p className="mt-4 text-xs text-suave">Linha de base informada na base (fictícia): 67% na faixa competitiva, 18 h por semana de revisão manual.</p>
-        </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <Card>
-          <Titulo eyebrow="Maior prioridade" acao={<Link href="/fila" className="rounded-[8px] px-2 py-1 text-sm font-semibold text-roxo hover:bg-roxo-50 hover:text-roxo-800">Ver todas</Link>}>
-            Comece por aqui
-          </Titulo>
-          <ul className="divide-y divide-linha">
-            {proximas.map((r) => (
-              <li key={r.id}>
-                <Link href={`/fila?item=${encodeURIComponent(r.id)}`} className="-mx-3 flex items-center gap-4 rounded-[10px] px-3 py-3 transition-colors hover:bg-roxo-50/60">
-                  <div className="min-w-0 flex-1">
-                    <p className="flex items-center gap-2 truncate text-sm font-semibold text-tinta">
-                      {r.produto} {r.sintetico && <SinteticoTag />}
-                    </p>
-                    <p className="truncate text-xs text-suave">{r.sku} · {r.canal} · {resumoCurto(r)}</p>
-                  </div>
-                  <div className="hidden sm:block"><Movimento r={r} /></div>
-                  <AcaoBadge acao={r.acao} />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Card>
-
-        <Card>
-          <Titulo eyebrow="Agrupados por regra">Regras acionadas</Titulo>
-          <ul className="space-y-2 text-sm">
-            {alertas.map((g) => (
-              <li key={g.texto} className="flex items-center justify-between gap-3">
-                <span className="flex items-center gap-2">
-                  {g.tipo === "bloqueio" ? <Ban size={15} className="shrink-0 text-piso" aria-label="Bloqueia" />
-                    : g.tipo === "aprovacao" ? <AlertTriangle size={15} className="shrink-0 text-revisar" aria-label="Pede aprovação" />
-                    : <Info size={15} className="shrink-0 text-suave" aria-label="Informativo" />}
-                  {g.texto}
-                </span>
-                <span className="num text-suave">{g.n}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-4 flex flex-wrap gap-x-3 gap-y-1 text-xs text-suave">
-            <span className="inline-flex items-center gap-1"><Info size={13} aria-hidden /> informativo</span>
-            <span className="inline-flex items-center gap-1"><AlertTriangle size={13} className="text-revisar" aria-hidden /> pede aprovação</span>
-            <span className="inline-flex items-center gap-1"><Ban size={13} className="text-piso" aria-hidden /> bloqueia a sugestão</span>
-          </p>
-          <div className="mt-4 rounded-[10px] bg-roxo-50 p-3 text-sm">
-            <span className="font-semibold text-tinta">{elegiveis}</span> itens poderiam ir para o piloto automático com o teto atual de {pct(p.piloto.teto, 0)}.{" "}
-            <Link href="/pilotagem" className="font-semibold text-roxo underline-offset-2 hover:underline">Pilotagem</Link>
-          </div>
-        </Card>
-      </div>
+      {/* Automação e aprendizado em uma faixa, cada item levando à tela certa */}
+      <section className="grid gap-4 sm:grid-cols-3" aria-label="Automação e aprendizado">
+        <Strip href="/pilotagem" icon={Plane} title={p.piloto.ligado ? "Piloto automático ligado" : "Piloto automático desligado"}
+          text={vetoPending ? `${vetoPending} ${vetoPending === 1 ? "mudança aguardando" : "mudanças aguardando"} veto` : `${p.regrasPiloto.length} ${p.regrasPiloto.length === 1 ? "regra de grupo" : "regras de grupo"} · teto de ${pct(p.piloto.teto, 0)}`} />
+        <Strip href="/aprendizado" icon={CalendarClock} title="Impacto medido"
+          text={p.outcomes.length ? `${improved} de ${p.outcomes.length} ${p.outcomes.length === 1 ? "mudança melhorou" : "mudanças melhoraram"} a contribuição` : "Nenhuma mudança medida ainda"} />
+        <Strip href="/aprendizado" icon={BrainCircuit} title="Aprendizado"
+          text={holds ? `${holds} ${holds === 1 ? "grupo fora" : "grupos fora"} do piloto por resultado ou rejeição` : "Nenhum grupo tirado do piloto"} tone={holds ? "text-piso" : undefined} />
+      </section>
     </div>
   );
 }
 
-function Metrica({ rotulo, hoje, depois, delta }: { rotulo: string; hoje: string; depois: string; delta?: string }) {
+function Stat({ label, value, hint, tone = "text-tinta", href }: { label: string; value: string; hint: string; tone?: string; href?: string }) {
+  const body = (
+    <>
+      <p className="text-sm text-texto">{label}</p>
+      <p className={clsx("num mt-1 font-display text-3xl font-semibold", tone)}>{value}</p>
+      <p className="mt-1 text-xs text-suave">{hint}</p>
+    </>
+  );
+  return href ? (
+    <Link href={href} className="block rounded-[15px] border border-linha bg-superficie p-5 transition-all hover:border-roxo hover:shadow-[0_6px_18px_rgba(61,35,88,0.08)]">{body}</Link>
+  ) : (
+    <Card>{body}</Card>
+  );
+}
+
+function Strip({ href, icon: Icon, title, text, tone }: { href: string; icon: LucideIcon; title: string; text: string; tone?: string }) {
   return (
-    <div>
-      <dt className="text-xs text-suave">{rotulo}</dt>
-      <dd className="num mt-0.5 flex items-baseline gap-2 text-tinta">
-        <span className="text-base">{hoje}</span>
-        <span className="text-suave">→</span>
-        <span className="font-display text-xl font-semibold">{depois}</span>
-        {delta && <span className="text-xs text-suave">{delta}</span>}
-      </dd>
-    </div>
+    <Link href={href} className="group flex items-center gap-3 rounded-[15px] border border-linha bg-superficie p-4 transition-all hover:border-roxo hover:shadow-[0_6px_18px_rgba(61,35,88,0.08)]">
+      <span className="grid size-10 shrink-0 place-items-center rounded-[10px] bg-roxo-50 text-roxo"><Icon size={18} aria-hidden /></span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold text-tinta">{title}</span>
+        <span className={clsx("block text-sm", tone ?? "text-suave")}>{text}</span>
+      </span>
+      <ChevronRight size={16} className="shrink-0 text-suave group-hover:text-roxo" aria-hidden />
+    </Link>
   );
 }

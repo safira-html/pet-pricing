@@ -8,6 +8,7 @@ import { Detalhe } from "@/components/Detalhe";
 import { AcaoBadge, Botao, RiscoBadge, SinteticoTag, Vazio } from "@/components/ui";
 import { posicaoMercado, resumoCurto } from "@/lib/explain";
 import { moeda, pct } from "@/lib/format";
+import { queueGroup as grupoDe } from "@/lib/queue";
 import { usePricing } from "@/lib/store";
 import type { Acao, Recomendacao } from "@/lib/types";
 
@@ -20,13 +21,6 @@ const GRUPOS: { id: Grupo; rotulo: string; resumo: string; dica: string; icone: 
 ];
 const BARRA: Record<Acao, string> = { SUBIR: "bg-subir", BAIXAR: "bg-baixar", MANTER: "bg-manter", REVISAR: "bg-revisar" };
 const CANAIS = ["Loja física", "E-commerce", "Marketplace"] as const;
-
-function grupoDe(r: Recomendacao, decidida: boolean): Grupo {
-  if (decidida) return "decididas";
-  if (r.preco_sugerido == null && r.proposta.rampa) return "rampa";
-  if (r.acao !== "REVISAR" && !r.alertas.some((a) => a.tipo !== "informativo")) return "rapida";
-  return "motivo";
-}
 
 function Fila() {
   const p = usePricing();
