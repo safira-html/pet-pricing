@@ -94,7 +94,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                           ativo ? "bg-roxo-50 font-semibold text-roxo-800" : "font-medium text-texto hover:bg-fundo hover:text-tinta",
                         )}
                       >
-                        {ativo && <span className="absolute inset-y-2.5 left-0 hidden w-[3px] rounded-full bg-roxo lg:block" aria-hidden />}
                         <Icone size={18} aria-hidden className={clsx("shrink-0", ativo ? "text-roxo" : "text-suave group-hover:text-roxo")} />
                         <span className="whitespace-nowrap">{rotulo}</span>
                         {badge ? (
@@ -151,7 +150,7 @@ function Aviso() {
   if (!aviso) return null;
   return (
     <div role="status" onMouseEnter={() => setPausado(true)} onMouseLeave={() => setPausado(false)} onFocus={() => setPausado(true)} onBlur={() => setPausado(false)}
-      className="fixed bottom-5 left-1/2 z-50 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-2 rounded-[12px] bg-tinta py-1.5 pr-1.5 pl-4 text-sm text-white shadow-xl">
+      className="anim-toast fixed bottom-5 left-1/2 z-50 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-2 rounded-[12px] bg-tinta py-1.5 pr-1.5 pl-4 text-sm text-white shadow-xl">
       <Check size={16} className="shrink-0 text-limao" aria-hidden />
       <span className="mr-2">{aviso.texto}</span>
       <button onClick={p.desfazer} className="inline-flex h-9 items-center gap-1.5 rounded-[8px] px-3 font-semibold text-limao hover:bg-white/10">

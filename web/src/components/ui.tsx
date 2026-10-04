@@ -64,7 +64,7 @@ export function Titulo({ eyebrow, children, acao }: { eyebrow?: string; children
   return (
     <header className="mb-4 flex items-end justify-between gap-4">
       <div>
-        {eyebrow && <p className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-roxo">{eyebrow}</p>}
+        {eyebrow && <p className="mb-0.5 text-sm font-medium text-roxo-800">{eyebrow}</p>}
         <h2 className="text-lg font-semibold">{children}</h2>
       </div>
       {acao}
@@ -77,7 +77,7 @@ export type VarianteBotao = "primario" | "secundario" | "fantasma" | "perigo" | 
 /** Classes do botão, para reaproveitar em links com cara de botão. */
 export function botaoClasses(variante: VarianteBotao = "primario", className?: string) {
   return clsx(
-    "inline-flex h-11 items-center justify-center gap-2 rounded-[10px] px-4 text-sm font-semibold whitespace-nowrap transition-colors active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45 disabled:active:scale-100",
+    "inline-flex h-11 items-center justify-center gap-2 rounded-[10px] px-4 text-sm font-semibold whitespace-nowrap transition-[color,background-color,border-color,transform] duration-150 ease-[var(--ease-out)] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-45 disabled:active:scale-100",
     variante === "primario" && "bg-roxo text-white hover:bg-roxo-700",
     variante === "secundario" && "border border-roxo text-roxo hover:bg-roxo-50",
     variante === "fantasma" && "text-roxo hover:bg-roxo-50",

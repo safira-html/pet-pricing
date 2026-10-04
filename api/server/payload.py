@@ -66,8 +66,8 @@ def ramp(current, floor):
             "texto": f"Subir em {steps} etapas de até 5%, a cada 3 dias, até o piso de R$ {floor:.2f}."}
 
 
-def sheet(raw: bytes, name):
-    return pd.read_excel(io.BytesIO(raw), sheet_name=name, header=2)
+def sheet(book: pd.ExcelFile, name):
+    return book.parse(sheet_name=name, header=2)
 
 
 def build_payload(raw: bytes, filename: str, scenario: str, synthetic_skus: set[str] | None = None) -> dict:
@@ -78,7 +78,7 @@ def build_payload(raw: bytes, filename: str, scenario: str, synthetic_skus: set[
         bundle = service.import_excel(raw, filename=filename, user="api")
         service.generate("api")
         recs = service.latest()
-    workbook = raw
+    workbook = pd.ExcelFile(io.BytesIO(raw))  # abre uma vez só para as cinco abas extras
 
     sales = sheet(workbook, "Vendas_12m")
     history = sheet(workbook, "Historico_Precos")

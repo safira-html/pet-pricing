@@ -125,6 +125,30 @@
   }
 }
 
+/* Movimento: só para dar sentido de estado e de lugar (gaveta, aviso, menu), rápido e com saída forte. */
+:root {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes backdrop-in {
+  from { opacity: 0; }
+}
+@keyframes drawer-in {
+  from { opacity: 0.6; transform: translateX(32px); }
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+}
+
+.anim-backdrop { animation: backdrop-in 200ms var(--ease-out); }
+.anim-drawer { animation: drawer-in 280ms var(--ease-drawer); }
+.anim-toast { animation: toast-in 220ms var(--ease-out); }
+.anim-pop { animation: pop-in 150ms var(--ease-out); transform-origin: top; }
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

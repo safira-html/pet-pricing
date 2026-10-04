@@ -74,18 +74,25 @@ class SessionStore:
         folder = self._dir(session_id)
         if not folder.exists():
             raise SessionNotFound(session_id)
-        con = sqlite3.connect(folder / "session.sqlite")
+        # Autocommit + BEGIN IMMEDIATE explícito: leitura e escrita da mesma operação ficam sob o mesmo lock.
+        con = sqlite3.connect(folder / "session.sqlite", timeout=10, isolation_level=None)
         con.row_factory = sqlite3.Row
         (folder / "last_used").write_text(str(time.time()))
         return con
 
+    _last_cleanup: float = 0.0
+
     def create(self) -> str:
-        self.cleanup()
+        # Limpeza no máximo a cada 10 minutos, para criar sessão não ficar mais lento com o tempo.
+        if time.time() - self._last_cleanup > 600:
+            self._last_cleanup = time.time()
+            self.cleanup()
         session_id = secrets.token_urlsafe(24)
         folder = self._dir(session_id)
         folder.mkdir()
-        with closing(sqlite3.connect(folder / "session.sqlite")) as con, con:
+        with closing(sqlite3.connect(folder / "session.sqlite")) as con:
             con.executescript(SCHEMA)
+            con.execute("PRAGMA journal_mode=WAL")
         (folder / "last_used").write_text(str(time.time()))
         return session_id
 
@@ -118,32 +125,44 @@ class SessionStore:
         return {"version": row["version"], "state": json.loads(row["body"]), "updated_at": row["updated_at"]}
 
     def put_state(self, session_id: str, state: dict, expected_version: int) -> int:
-        with closing(self._connect(session_id)) as con, con:
-            row = con.execute("SELECT version FROM state WHERE id = 1").fetchone()
-            current = row["version"] if row else 0
-            if expected_version != current:
-                raise VersionConflict(current)
-            body = json.dumps(state, ensure_ascii=False)
-            con.execute(
-                "INSERT INTO state (id, version, body, updated_at) VALUES (1, ?, ?, ?) "
-                "ON CONFLICT(id) DO UPDATE SET version = excluded.version, body = excluded.body, updated_at = excluded.updated_at",
-                (current + 1, body, now_iso()),
-            )
+        body = json.dumps(state, ensure_ascii=False)
+        with closing(self._connect(session_id)) as con:
+            con.execute("BEGIN IMMEDIATE")
+            try:
+                row = con.execute("SELECT version FROM state WHERE id = 1").fetchone()
+                current = row["version"] if row else 0
+                if expected_version != current:
+                    raise VersionConflict(current)
+                con.execute(
+                    "INSERT INTO state (id, version, body, updated_at) VALUES (1, ?, ?, ?) "
+                    "ON CONFLICT(id) DO UPDATE SET version = excluded.version, body = excluded.body, updated_at = excluded.updated_at",
+                    (current + 1, body, now_iso()),
+                )
+                con.execute("COMMIT")
+            except BaseException:
+                con.execute("ROLLBACK")
+                raise
         return current + 1
 
     # Histórico encadeado -----------------------------------------------------
     def append_event(self, session_id: str, author: str, profile: str, kind: str, text: str, rec_id: str | None) -> dict:
-        with closing(self._connect(session_id)) as con, con:
-            last = con.execute("SELECT hash FROM events ORDER BY seq DESC LIMIT 1").fetchone()
-            prev_hash = last["hash"] if last else GENESIS
-            event = {"at": now_iso(), "author": author, "profile": profile, "kind": kind, "text": text, "rec_id": rec_id}
-            event["prev_hash"] = prev_hash
-            event["hash"] = event_hash(prev_hash, event)
-            cur = con.execute(
-                "INSERT INTO events (at, author, profile, kind, text, rec_id, prev_hash, hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                (event["at"], author, profile, kind, text, rec_id, prev_hash, event["hash"]),
-            )
-            event["seq"] = cur.lastrowid
+        with closing(self._connect(session_id)) as con:
+            con.execute("BEGIN IMMEDIATE")  # sem isso, dois eventos simultâneos usariam o mesmo hash anterior
+            try:
+                last = con.execute("SELECT hash FROM events ORDER BY seq DESC LIMIT 1").fetchone()
+                prev_hash = last["hash"] if last else GENESIS
+                event = {"at": now_iso(), "author": author, "profile": profile, "kind": kind, "text": text, "rec_id": rec_id}
+                event["prev_hash"] = prev_hash
+                event["hash"] = event_hash(prev_hash, event)
+                cur = con.execute(
+                    "INSERT INTO events (at, author, profile, kind, text, rec_id, prev_hash, hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    (event["at"], author, profile, kind, text, rec_id, prev_hash, event["hash"]),
+                )
+                event["seq"] = cur.lastrowid
+                con.execute("COMMIT")
+            except BaseException:
+                con.execute("ROLLBACK")
+                raise
         return event
 
     def events(self, session_id: str, limit: int = 500) -> list[dict]:
@@ -163,7 +182,7 @@ class SessionStore:
 
     # Base enviada --------------------------------------------------------------
     def save_upload(self, session_id: str, filename: str, sha256: str, payload: dict) -> None:
-        with closing(self._connect(session_id)) as con, con:
+        with closing(self._connect(session_id)) as con:
             con.execute(
                 "INSERT INTO uploads (id, filename, sha256, payload, uploaded_at) VALUES (1, ?, ?, ?, ?) "
                 "ON CONFLICT(id) DO UPDATE SET filename = excluded.filename, sha256 = excluded.sha256, payload = excluded.payload, uploaded_at = excluded.uploaded_at",

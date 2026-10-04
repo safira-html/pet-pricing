@@ -19,7 +19,6 @@ const GRUPOS: { id: Grupo; rotulo: string; resumo: string; dica: string; icone: 
   { id: "rampa", rotulo: "Rampa de reajuste", resumo: "subir em etapas até o mínimo", dica: "O preço mínimo fica além do limite por decisão: a proposta é subir em etapas, com aprovação.", icone: Footprints },
   { id: "decididas", rotulo: "Decididos", resumo: "já registrados", dica: "Tudo o que já tem decisão registrada.", icone: CheckCheck },
 ];
-const BARRA: Record<Acao, string> = { SUBIR: "bg-subir", BAIXAR: "bg-baixar", MANTER: "bg-manter", REVISAR: "bg-revisar" };
 const CANAIS = ["Loja física", "E-commerce", "Marketplace"] as const;
 
 function Fila() {
@@ -155,7 +154,7 @@ function Fila() {
         const i = lista.findIndex((r) => r.id === aberto.id);
         const prox = lista.slice(i + 1).find((r) => !p.decisaoDe(r.id) && r.id !== aberto.id) ?? lista.find((r) => !p.decisaoDe(r.id) && r.id !== aberto.id);
         return (
-          <Detalhe key={aberto.id} r={aberto} progresso={`${decididas} de ${p.recs.length} decididos`}
+          <Detalhe r={aberto} progresso={`${decididas} de ${p.recs.length} decididos`}
             onFechar={() => setParam("item", null)}
             onAnterior={i > 0 ? () => setParam("item", lista[i - 1].id) : undefined}
             onProximo={prox ? () => setParam("item", prox.id) : undefined} />
@@ -176,8 +175,7 @@ function LinhaFila({ r, selecionado, podeRapido, onSel, onAbrir }: {
     <li
       // O cartão inteiro abre o item; caixa de seleção e botões mantêm a própria ação.
       onClick={(e) => { if (!(e.target as HTMLElement).closest("button, input, a, label")) onAbrir(); }}
-      className={clsx("relative cursor-pointer overflow-hidden rounded-[14px] border border-linha transition-all hover:border-roxo/40 hover:shadow-[0_6px_18px_rgba(61,35,88,0.08)]", d ? "bg-fundo" : "bg-superficie")}>
-      <span className={clsx("absolute inset-y-0 left-0 w-1.5", BARRA[r.acao])} aria-hidden />
+      className={clsx("relative cursor-pointer overflow-hidden rounded-[14px] border border-linha transition-[border-color,box-shadow,transform,background-color] duration-200 hover:border-roxo/40 hover:shadow-[0_6px_18px_rgba(61,35,88,0.08)]", d ? "bg-fundo" : "bg-superficie")}>
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 py-3.5 pr-3 pl-4 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:gap-x-4 sm:pr-4 sm:pl-5 lg:grid-cols-[auto_minmax(0,1fr)_minmax(250px,auto)_minmax(0,1.4fr)_auto]">
         {/* área de toque maior em volta da caixa, sem abrir o cartão */}
         <label className="-m-3 grid place-items-center p-3">

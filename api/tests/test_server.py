@@ -154,3 +154,30 @@ def test_llm_offline_falls_back(monkeypatch):
     monkeypatch.setattr(httpx, "post", boom)
     out = explain_module.explain("Tapete", "Loja física", "MANTER", FACTS, cfg)
     assert out["source"] == "deterministic"
+
+
+def test_concurrent_events_keep_the_chain_valid():
+    """Eventos simultâneos (o front manda dois no mesmo instante) não podem quebrar a cadeia."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    sid = new_session()
+    body = {"author": "Safira", "profile": "gestor", "kind": "decisão", "text": "evento"}
+    with ThreadPoolExecutor(max_workers=10) as pool:
+        codes = list(pool.map(lambda i: client.post(f"/api/sessions/{sid}/events", json={**body, "text": f"evento {i}"}).status_code, range(20)))
+    assert codes == [201] * 20
+    assert client.get(f"/api/sessions/{sid}/events/verify").json() == {"valid": True, "events": 20, "broken_at": None}
+
+
+def test_concurrent_state_writes_accept_only_one_per_version():
+    from concurrent.futures import ThreadPoolExecutor
+
+    sid = new_session()
+    with ThreadPoolExecutor(max_workers=10) as pool:
+        codes = list(pool.map(lambda i: client.put(f"/api/sessions/{sid}/state", json={"version": 0, "state": {"n": i}}).status_code, range(10)))
+    assert codes.count(200) == 1 and codes.count(409) == 9
+
+
+def test_oversized_body_is_rejected_before_reading():
+    sid = new_session()
+    response = client.put(f"/api/sessions/{sid}/state", content=b"x" * 10, headers={"Content-Type": "application/json", "Content-Length": str(4 * 1024 * 1024)})
+    assert response.status_code == 413

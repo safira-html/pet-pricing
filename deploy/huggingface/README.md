@@ -6,7 +6,7 @@ colorTo: green
 sdk: docker
 app_port: 7860
 pinned: false
-short_description: API do protótipo acadêmico Pet Pricing (ITA Challenge Sprint)
+short_description: API do protótipo Pet Pricing (ITA Challenge)
 ---
 
 # Pet Pricing · API
@@ -20,5 +20,7 @@ A API roda o motor de recomendação de preços sobre a base fictícia do desafi
 - histórico de eventos encadeado por hash.
 
 A documentação interativa fica em `/api/docs`.
+
+O histórico encadeado detecta alteração ou remoção de eventos no meio da cadeia. Ele não usa chave secreta, então não protege contra quem tem acesso direto ao banco.
 
 O disco do plano gratuito não é persistente: quando o Space reinicia, as sessões são perdidas, e isso é esperado na demo.

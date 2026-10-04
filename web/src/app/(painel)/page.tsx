@@ -102,7 +102,7 @@ export default function Overview() {
             const quickHere = items.filter((r) => queueGroup(r, false) === "rapida").length;
             return (
               <Link key={action} href={`/fila?acao=${action}`}
-                className="group flex flex-col rounded-[15px] border border-linha bg-superficie p-5 transition-all hover:border-roxo hover:shadow-[0_6px_18px_rgba(61,35,88,0.08)] active:scale-[0.99]">
+                className="group flex flex-col rounded-[15px] border border-linha bg-superficie p-5 transition-[border-color,box-shadow,transform,background-color] duration-200 hover:border-roxo hover:shadow-[0_6px_18px_rgba(61,35,88,0.08)] active:scale-[0.99]">
                 <span className="flex items-center justify-between">
                   <span className={clsx("grid size-9 place-items-center rounded-[10px]", tone)}><Icon size={18} aria-hidden /></span>
                   <ArrowRight size={16} className="text-suave transition-transform group-hover:translate-x-0.5 group-hover:text-roxo" aria-hidden />
@@ -217,7 +217,7 @@ function Stat({ label, value, hint, tone = "text-tinta", href }: { label: string
     </>
   );
   return href ? (
-    <Link href={href} className="block rounded-[15px] border border-linha bg-superficie p-5 transition-all hover:border-roxo hover:shadow-[0_6px_18px_rgba(61,35,88,0.08)]">{body}</Link>
+    <Link href={href} className="block rounded-[15px] border border-linha bg-superficie p-5 transition-[border-color,box-shadow,transform,background-color] duration-200 hover:border-roxo hover:shadow-[0_6px_18px_rgba(61,35,88,0.08)]">{body}</Link>
   ) : (
     <Card>{body}</Card>
   );
@@ -225,7 +225,7 @@ function Stat({ label, value, hint, tone = "text-tinta", href }: { label: string
 
 function Strip({ href, icon: Icon, title, text, tone }: { href: string; icon: LucideIcon; title: string; text: string; tone?: string }) {
   return (
-    <Link href={href} className="group flex items-center gap-3 rounded-[15px] border border-linha bg-superficie p-4 transition-all hover:border-roxo hover:shadow-[0_6px_18px_rgba(61,35,88,0.08)]">
+    <Link href={href} className="group flex items-center gap-3 rounded-[15px] border border-linha bg-superficie p-4 transition-[border-color,box-shadow,transform,background-color] duration-200 hover:border-roxo hover:shadow-[0_6px_18px_rgba(61,35,88,0.08)]">
       <span className="grid size-10 shrink-0 place-items-center rounded-[10px] bg-roxo-50 text-roxo"><Icon size={18} aria-hidden /></span>
       <span className="min-w-0 flex-1">
         <span className="block text-sm font-semibold text-tinta">{title}</span>

@@ -10,10 +10,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import threading
 import time
 from collections import defaultdict, deque
+from contextlib import asynccontextmanager
 from functools import lru_cache
-from typing import Literal
+from typing import Annotated, Literal
 
 from fastapi import Depends, FastAPI, File, Header, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -33,29 +35,54 @@ MAX_STATE_BYTES = 2 * 1024 * 1024
 
 settings = get_settings()
 store = SessionStore(settings.sessions_dir, settings.session_ttl_hours)
-app = FastAPI(title="Pet Pricing API", version="2.0.0", docs_url="/api/docs", openapi_url="/api/openapi.json")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.allowed_origins,
-    allow_methods=["GET", "POST", "PUT"],
-    allow_headers=["Content-Type", "X-Profile"],
-)
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    """Calcula as bases de demonstração em segundo plano, para o primeiro visitante não esperar."""
+    threading.Thread(target=lambda: [demo_base("oficial"), demo_base("sintetico")], daemon=True).start()
+    yield
 
+
+app = FastAPI(title="Pet Pricing API", version="2.0.0", docs_url="/api/docs", openapi_url="/api/openapi.json", lifespan=lifespan)
 _hits: dict[str, deque] = defaultdict(deque)
+MAX_BODY_BYTES = 3 * 1024 * 1024
+
+
+def client_ip(request: Request) -> str:
+    """IP real: a última entrada do X-Forwarded-For é a que o proxy do Hugging Face acrescenta."""
+    forwarded = request.headers.get("x-forwarded-for", "")
+    if forwarded:
+        return forwarded.split(",")[-1].strip()
+    return request.client.host if request.client else "?"
 
 
 @app.middleware("http")
-async def rate_limit(request: Request, call_next):
-    """Limite simples por IP para a demo pública não ser derrubada por abuso."""
-    ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "?").split(",")[0].strip()
-    window = _hits[ip]
+async def guard(request: Request, call_next):
+    """Limite por IP e de tamanho do corpo, antes de ler qualquer coisa."""
+    limit = int(settings.max_upload_mb * 1024 * 1024) + 64 * 1024 if request.url.path.endswith("/upload") else MAX_BODY_BYTES
+    length = request.headers.get("content-length")
+    if length and length.isdigit() and int(length) > limit:
+        return JSONResponse({"detail": "Arquivo ou requisição grande demais."}, status_code=413)
+    ip = client_ip(request)
     now = time.monotonic()
+    if len(_hits) > 5000:  # descarta IPs sem uso recente para a memória não crescer
+        for key in [k for k, w in _hits.items() if not w or now - w[-1] > 60]:
+            _hits.pop(key, None)
+    window = _hits[ip]
     while window and now - window[0] > 60:
         window.popleft()
     if len(window) >= settings.rate_limit_per_minute:
         return JSONResponse({"detail": "Muitas requisições. Tente de novo em um minuto."}, status_code=429)
     window.append(now)
     return await call_next(request)
+
+
+# CORS por último = camada mais externa: até o 429 e o 413 saem com o cabeçalho certo.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.allowed_origins,
+    allow_methods=["GET", "POST", "PUT"],
+    allow_headers=["Content-Type", "X-Profile"],
+)
 
 
 def config() -> Settings:
@@ -100,7 +127,7 @@ class ExplainIn(BaseModel):
     product: str = Field(max_length=160)
     channel: str = Field(max_length=40)
     action: str = Field(max_length=20)
-    facts: list[str] = Field(max_length=12)
+    facts: list[Annotated[str, Field(max_length=400)]] = Field(max_length=12)
 
 
 @app.get("/api/health")
@@ -162,7 +189,7 @@ def get_upload(session_id: str = Depends(require_session)):
 
 
 @app.post("/api/sessions/{session_id}/upload", status_code=201)
-async def upload_base(
+def upload_base(  # síncrono de propósito: o FastAPI roda em thread e não trava as outras requisições
     file: UploadFile = File(...),
     session_id: str = Depends(require_session),
     x_profile: str = Header(default="visitante"),
@@ -171,14 +198,14 @@ async def upload_base(
     # Na demo o perfil é declarado; em produção viria do login corporativo.
     if x_profile != "gestor":
         raise HTTPException(403, "Só o gestor envia uma base nova.")
-    raw = await file.read(int(cfg.max_upload_mb * 1024 * 1024) + 1)
+    raw = file.file.read(int(cfg.max_upload_mb * 1024 * 1024) + 1)
     if len(raw) > cfg.max_upload_mb * 1024 * 1024:
         raise HTTPException(413, f"Envie um arquivo de até {cfg.max_upload_mb:g} MB.")
     filename = file.filename or "base.xlsx"
     try:
         payload = build_payload(raw, filename, "enviada")
-    except ValueError as exc:
-        raise HTTPException(422, str(exc)) from exc
+    except ValueError as exc:  # mensagens do validador do motor, em português
+        raise HTTPException(422, str(exc)[:300]) from exc
     except Exception as exc:  # planilha fora do modelo quebra em pontos diferentes do pandas/openpyxl
         raise HTTPException(422, "Não consegui ler a planilha. Use o mesmo modelo de abas e colunas da base do desafio.") from exc
     sha = hashlib.sha256(raw).hexdigest()

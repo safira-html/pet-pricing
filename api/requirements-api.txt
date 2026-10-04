@@ -1,9 +1,11 @@
 # Dependências só da API (sem Streamlit nem OpenAI), usadas no contêiner do Hugging Face.
-pandas>=2.2,<3
-openpyxl>=3.1,<4
-pydantic>=2.10,<3
-tzdata>=2025.1
-fastapi>=0.115,<1
-uvicorn[standard]>=0.30,<1
-python-multipart>=0.0.9
-httpx>=0.27,<1
+# Versões fixadas nas que passaram nos testes locais.
+pandas==2.3.3
+openpyxl==3.1.5
+pydantic==2.13.5
+tzdata==2026.5
+fastapi==0.142.2
+starlette==1.7.0
+uvicorn[standard]==0.54.0
+python-multipart==0.0.32
+httpx==0.28.1

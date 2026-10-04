@@ -3,7 +3,7 @@
 import clsx from "clsx";
 import { AlertTriangle, Ban, ChevronLeft, ChevronRight, Info, Sparkles, X } from "lucide-react";
 import { PainelDecisao } from "./Decisao";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MapaPreco } from "./PriceRuler";
 import { AcaoBadge, Botao, ModoBadge, RiscoBadge, SinteticoTag } from "./ui";
 import { api, type ExplainResult } from "@/lib/api";
@@ -19,6 +19,9 @@ export function Detalhe({ r, onFechar, onAnterior, onProximo, progresso }: {
 }) {
   const p = usePricing();
   useEffect(() => p.marcarAbertura(r.id), [r.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  // A gaveta continua montada ao trocar de item (sem reanimar a cada ← →); só o conteúdo volta ao topo.
+  const corpoRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { corpoRef.current?.scrollTo({ top: 0 }); }, [r.id]);
 
   useEffect(() => {
     const esc = (e: KeyboardEvent) => {
@@ -35,13 +38,13 @@ export function Detalhe({ r, onFechar, onAnterior, onProximo, progresso }: {
   const eleg = p.eligibility(r);
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-end bg-tinta/30" onClick={onFechar}>
+    <div className="anim-backdrop fixed inset-0 z-40 flex justify-end bg-tinta/30" onClick={onFechar}>
       <aside
         role="dialog"
         aria-modal="true"
         aria-label={`${r.produto}, ${r.canal}`}
         onClick={(e) => e.stopPropagation()}
-        className="flex h-full w-full max-w-[860px] flex-col overflow-hidden bg-fundo shadow-2xl"
+        className="anim-drawer flex h-full w-full max-w-[860px] flex-col overflow-hidden bg-fundo shadow-2xl"
       >
         <header className="flex items-start justify-between gap-4 border-b border-linha bg-superficie px-6 py-5">
           <div className="min-w-0">
@@ -64,11 +67,11 @@ export function Detalhe({ r, onFechar, onAnterior, onProximo, progresso }: {
           </div>
         </header>
 
-        <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
+        <div ref={corpoRef} className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
           <section className="rounded-[15px] border border-linha bg-superficie p-5">
             <MapaPreco r={r} />
-            <ResumoLLM r={r} fatos={motivos} />
-            <h3 className="mt-5 text-xs font-semibold tracking-wide text-suave uppercase">Como o sistema chegou aqui</h3>
+            <ResumoLLM key={r.id} r={r} fatos={motivos} />
+            <h3 className="mt-5 text-sm font-semibold text-tinta">Como o sistema chegou aqui</h3>
             <ul className="mt-2 space-y-2 text-sm text-texto">
               {motivos.map((m) => (
                 <li key={m} className="flex gap-2"><span className="mt-2 size-1.5 shrink-0 rounded-full bg-roxo" aria-hidden />{m}</li>
@@ -112,7 +115,7 @@ export function Detalhe({ r, onFechar, onAnterior, onProximo, progresso }: {
           <ResultadoEAprendizado r={r} />
         </div>
 
-        <PainelDecisao r={r} onDecidido={() => onProximo?.()} />
+        <PainelDecisao key={r.id} r={r} onDecidido={() => onProximo?.()} />
       </aside>
     </div>
   );

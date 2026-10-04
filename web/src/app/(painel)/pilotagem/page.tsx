@@ -73,8 +73,8 @@ export default function Pilotagem() {
             </div>
             <button role="switch" aria-checked={p.piloto.ligado} aria-label="Ligar piloto automático" disabled={!gestor}
               onClick={() => p.configurarPiloto({ ligado: !p.piloto.ligado })}
-              className={clsx("relative h-8 w-14 shrink-0 rounded-full transition-colors disabled:opacity-45", p.piloto.ligado ? "bg-subir" : "bg-linha-forte")}>
-              <span className={clsx("absolute top-1 size-6 rounded-full bg-white shadow transition-all", p.piloto.ligado ? "left-7" : "left-1")} />
+              className={clsx("relative h-8 w-14 shrink-0 rounded-full transition-colors duration-200 disabled:opacity-45", p.piloto.ligado ? "bg-subir" : "bg-linha-forte")}>
+              <span className={clsx("absolute top-1 left-1 size-6 rounded-full bg-white shadow transition-transform duration-200 ease-[var(--ease-out)]", p.piloto.ligado && "translate-x-6")} />
             </button>
           </div>
           <label className="mt-5 block text-sm font-medium text-tinta">

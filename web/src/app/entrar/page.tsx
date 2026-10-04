@@ -75,7 +75,7 @@ export default function Entrar() {
 
           <ol className="grid shrink-0 grid-cols-3 gap-2.5">
             {CICLO.map((c, i) => (
-              <li key={c.n} className={clsx("rounded-[14px] p-3", i === 0 ? "bg-white text-tinta" : "bg-white/10 text-white ring-1 ring-white/15 backdrop-blur")}>
+              <li key={c.n} className={clsx("rounded-[14px] p-3", i === 0 ? "bg-white text-tinta" : "bg-white/10 text-white ring-1 ring-white/15")}>
                 <span className="flex items-center gap-2">
                   <span className={clsx("num grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold", i === 0 ? "bg-roxo text-white" : "ring-1 ring-white/50")}>{c.n}</span>
                   <span className="text-sm font-semibold">{c.titulo}</span>
@@ -100,7 +100,7 @@ export default function Entrar() {
                   const sel = perfil === k;
                   return (
                     <label key={k} className={clsx(
-                      "flex cursor-pointer items-center gap-3 rounded-[12px] border px-3 py-2.5 transition-all has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-roxo",
+                      "flex cursor-pointer items-center gap-3 rounded-[12px] border px-3 py-2.5 transition-[border-color,box-shadow,background-color] duration-150 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-roxo",
                       sel ? "border-roxo bg-roxo-50/60 shadow-[0_0_0_1px_var(--roxo)]" : "border-linha hover:border-roxo/50 hover:bg-fundo",
                     )}>
                       <input type="radio" name="perfil" value={k} checked={sel} onChange={() => setPerfil(k)} className="sr-only" />
@@ -126,7 +126,7 @@ export default function Entrar() {
                 className="mt-1.5 h-11 w-full rounded-[12px] border border-linha-forte bg-superficie px-4 text-sm outline-none transition-colors placeholder:text-suave focus:border-roxo" />
             </label>
 
-            <button onClick={entrar} className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-[12px] bg-roxo text-sm font-semibold text-white shadow-[0_8px_20px_rgba(118,78,160,0.35)] transition-all hover:bg-roxo-700 active:scale-[0.99]">
+            <button onClick={entrar} className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-[12px] bg-roxo text-sm font-semibold text-white shadow-[0_8px_20px_rgba(118,78,160,0.35)] transition-[border-color,box-shadow,transform,background-color] duration-200 hover:bg-roxo-700 active:scale-[0.99]">
               <LogIn size={18} aria-hidden /> Entrar
             </button>
 

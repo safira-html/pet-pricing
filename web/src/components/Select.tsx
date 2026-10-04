@@ -102,7 +102,7 @@ export function Select<T extends string>({
           aria-labelledby={`${id}-rotulo`}
           tabIndex={-1}
           onKeyDown={teclado}
-          className="absolute z-30 mt-1.5 max-h-72 w-full min-w-48 overflow-auto rounded-[12px] border border-linha bg-superficie p-1.5 shadow-[0_12px_32px_rgba(61,35,88,0.16)]"
+          className="anim-pop absolute z-30 mt-1.5 max-h-72 w-full min-w-48 overflow-auto rounded-[12px] border border-linha bg-superficie p-1.5 shadow-[0_12px_32px_rgba(61,35,88,0.16)]"
         >
           {opcoes.map((o, i) => {
             const sel = selecionados.includes(o.valor);

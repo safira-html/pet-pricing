@@ -114,7 +114,10 @@ export function PainelDecisao({ r, onDecidido }: { r: Recomendacao; onDecidido: 
     );
   }
   // A recomendação principal aparece cheia (ação primária); as demais, com contorno.
-  const principal = opcoes.find((o) => o.ok && (o.tipo === "aprovar" || o.tipo === "etapa_rampa"))?.tipo;
+  // Em item que pede revisão, nenhuma opção é destacada: aprovar "mesmo assim" não pode parecer o caminho padrão.
+  const principal = r.acao === "REVISAR"
+    ? (r.proposta.rampa && opcoes.some((o) => o.tipo === "etapa_rampa" && o.ok) ? "etapa_rampa" : undefined)
+    : opcoes.find((o) => o.ok && o.tipo === "aprovar")?.tipo;
 
   const podeConfirmar = opcao && opcao.ok && motivo.trim().length >= 3 && (escolha !== "editar" || precoFinal != null);
 

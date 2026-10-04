@@ -116,11 +116,11 @@ export function EditorRegra({ inicial, onFechar }: { inicial?: RegraPreco; onFec
   );
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-end bg-tinta/30" onClick={onFechar}>
-      <aside role="dialog" aria-modal="true" aria-label="Regra de preço" onClick={(e) => e.stopPropagation()} className="flex h-full w-full max-w-[720px] flex-col bg-fundo shadow-2xl">
+    <div className="anim-backdrop fixed inset-0 z-40 flex justify-end bg-tinta/30" onClick={onFechar}>
+      <aside role="dialog" aria-modal="true" aria-label="Regra de preço" onClick={(e) => e.stopPropagation()} className="anim-drawer flex h-full w-full max-w-[720px] flex-col bg-fundo shadow-2xl">
         <header className="flex items-start justify-between gap-4 border-b border-linha bg-superficie px-6 py-5">
           <div>
-            <p className="text-xs font-semibold tracking-[0.12em] text-roxo uppercase">Regra por grupo de produtos</p>
+            <p className="text-sm font-medium text-roxo-800">Regra por grupo de produtos</p>
             <h2 className="mt-1 text-xl font-semibold">{inicial ? "Editar regra" : "Nova regra"}</h2>
           </div>
           <button onClick={onFechar} className="grid size-11 place-items-center rounded-[10px] text-suave hover:bg-roxo-50" aria-label="Fechar"><X size={20} /></button>
@@ -158,8 +158,8 @@ export function EditorRegra({ inicial, onFechar }: { inicial?: RegraPreco; onFec
                 <span className="text-xs text-suave">Os itens cobertos nunca vão sozinhos pelo piloto automático.</span>
               </span>
               <button role="switch" aria-checked={g.exigeAprovacao} aria-label="Exigir aprovação" onClick={() => setG({ ...g, exigeAprovacao: !g.exigeAprovacao })}
-                className={clsx("relative h-8 w-14 shrink-0 rounded-full transition-colors", g.exigeAprovacao ? "bg-subir" : "bg-linha-forte")}>
-                <span className={clsx("absolute top-1 size-6 rounded-full bg-white shadow transition-all", g.exigeAprovacao ? "left-7" : "left-1")} />
+                className={clsx("relative h-8 w-14 shrink-0 rounded-full transition-colors duration-200", g.exigeAprovacao ? "bg-subir" : "bg-linha-forte")}>
+                <span className={clsx("absolute top-1 left-1 size-6 rounded-full bg-white shadow transition-transform duration-200 ease-[var(--ease-out)]", g.exigeAprovacao && "translate-x-6")} />
               </button>
             </div>
             <label className="block text-sm font-medium text-tinta sm:col-span-2">Motivo <span className="font-normal text-suave">(fica no histórico)</span>

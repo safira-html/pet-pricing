@@ -169,6 +169,7 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
   const [sessaoId, setSessaoId] = useState<string | null>(null);
   const [statusApi, setStatusApi] = useState<StatusApi>(apiEnabled ? "conectando" : "local");
   const versaoRef = useRef(0);
+  const [tentativa, setTentativa] = useState(0);
   const ctxRef = useRef({ sessaoId: null as string | null, perfil: null as Perfil | null, online: false });
   useEffect(() => {
     ctxRef.current = { sessaoId, perfil: estado.perfil, online: statusApi === "online" };
@@ -257,7 +258,17 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
       }
     })();
     return () => { cancelado = true; };
-  }, [carregado]);
+  }, [carregado, tentativa]);
+
+  // Fora do ar (servidor dormindo ou rede caiu): tenta de novo a cada 20 s e ao voltar para a aba.
+  useEffect(() => {
+    if (statusApi !== "offline") return;
+    const tentar = () => api.health().then(() => { setStatusApi("conectando"); setTentativa((n) => n + 1); }).catch(() => undefined);
+    const t = setInterval(tentar, 20000);
+    const visivel = () => { if (document.visibilityState === "visible") tentar(); };
+    document.addEventListener("visibilitychange", visivel);
+    return () => { clearInterval(t); document.removeEventListener("visibilitychange", visivel); };
+  }, [statusApi]);
 
   // Salva o estado no servidor com atraso curto; em conflito, adota a versão atual e grava de novo.
   useEffect(() => {
@@ -268,12 +279,28 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
         versaoRef.current = (await api.putState(sessaoId, versaoRef.current, corpo)).version;
       } catch (e) {
         if (e instanceof ApiError && e.status === 409) {
+          // Outra aba salvou antes: adota o estado do servidor em vez de apagar o trabalho dela.
           try {
-            versaoRef.current = (await api.getState(sessaoId)).version;
-            versaoRef.current = (await api.putState(sessaoId, versaoRef.current, corpo)).version;
+            const remoto = await api.getState(sessaoId);
+            versaoRef.current = remoto.version;
+            if (remoto.state) {
+              const lido = remoto.state as Partial<Estado>;
+              setEstado((s) => ({ ...s, ...lido, perfil: s.perfil, nome: s.nome, aviso: null }));
+            }
           } catch {
             setStatusApi("offline");
           }
+        } else if (e instanceof ApiError && e.status === 404) {
+          // Sessão expirou ou o servidor reiniciou: abre outra e regrava o estado local.
+          try {
+            localStorage.removeItem(CHAVE_SESSAO);
+          } catch {
+            /* ignora */
+          }
+          versaoRef.current = 0;
+          setSessaoId(null);
+          setStatusApi("conectando");
+          setTentativa((n) => n + 1);
         } else setStatusApi("offline");
       }
     }, 800);
