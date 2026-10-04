@@ -127,13 +127,13 @@ export function PainelDecisao({ r, onDecidido }: { r: Recomendacao; onDecidido: 
               title={o.motivo ?? `Atalho: tecla ${o.tecla}`}
               aria-pressed={escolha === o.tipo}
               className={clsx(
-                "group flex flex-col items-center justify-center gap-1 rounded-[12px] border-2 px-3 py-2.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+                "group flex min-h-16 flex-col items-center justify-center gap-1 rounded-[10px] border-2 px-3 py-2.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40",
                 escolha === o.tipo ? o.ativo : clsx("bg-superficie", o.estilo),
               )}
             >
               <Icone size={20} strokeWidth={2.4} aria-hidden />
               <span>{o.rotulo}</span>
-              <span className="num text-[11px] font-normal opacity-80">
+              <span className="num text-xs font-normal opacity-80">
                 {o.preco != null ? moeda(o.preco) : o.tipo === "editar" ? "outro valor" : o.tipo === "revisar" ? "sem mudar o preço" : "manter o atual"}
               </span>
             </button>
@@ -185,7 +185,7 @@ export function PainelDecisao({ r, onDecidido }: { r: Recomendacao; onDecidido: 
       )}
 
       {!escolha && regras.length > 0 && (
-        <p className="mt-2 text-xs text-suave">Pede motivo porque: {fraseAlerta(regras[0]).replace(/\.$/, "").toLowerCase()}.</p>
+        <p className="mt-2 text-sm text-suave">Motivo obrigatório: {fraseAlerta(regras[0]).replace(/\.$/, "").toLowerCase()}.</p>
       )}
     </footer>
   );

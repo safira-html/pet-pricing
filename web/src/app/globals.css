@@ -79,6 +79,15 @@
   h3 {
     font-family: var(--font-poppins), system-ui, sans-serif;
     color: var(--tinta);
+    line-height: 1.25;
+    text-wrap: balance;
+  }
+
+  /* Dicas #1 e #2 do guia: entrelinha confortável e sem palavras soltas no fim. */
+  p,
+  li {
+    line-height: 1.5;
+    text-wrap: pretty;
   }
 
   :focus-visible {

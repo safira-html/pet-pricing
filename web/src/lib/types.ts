@@ -120,3 +120,12 @@ export interface ConfigPiloto {
   teto: number;
   janelaVetoHoras: number;
 }
+
+/** Regra de grupo da pilotagem: todos os critérios preenchidos precisam bater. */
+export interface RegraPiloto {
+  id: string;
+  curva: "A" | "B" | "C" | null;
+  canal: Canal | null;
+  categoria: string | null;
+  criadaEm: string;
+}

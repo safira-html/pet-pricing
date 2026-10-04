@@ -55,9 +55,9 @@ export function Detalhe({ r, onFechar, onAnterior, onProximo, progresso }: {
           </div>
           <div className="flex shrink-0 items-center gap-1">
             {progresso && <span className="mr-2 hidden text-xs text-suave sm:inline">{progresso}</span>}
-            <button onClick={onAnterior} disabled={!onAnterior} className="rounded-lg p-2 text-suave hover:bg-roxo-50 disabled:opacity-30" aria-label="Anterior (←)" title="Anterior (←)"><ChevronLeft size={20} /></button>
-            <button onClick={onProximo} disabled={!onProximo} className="rounded-lg p-2 text-suave hover:bg-roxo-50 disabled:opacity-30" aria-label="Próximo (→)" title="Próximo (→)"><ChevronRight size={20} /></button>
-            <button onClick={onFechar} className="rounded-lg p-2 text-suave hover:bg-roxo-50" aria-label="Fechar (Esc)" title="Fechar (Esc)"><X size={20} /></button>
+            <button onClick={onAnterior} disabled={!onAnterior} className="grid size-11 place-items-center rounded-[10px] text-suave hover:bg-roxo-50 disabled:opacity-30" aria-label="Anterior (←)" title="Anterior (←)"><ChevronLeft size={20} /></button>
+            <button onClick={onProximo} disabled={!onProximo} className="grid size-11 place-items-center rounded-[10px] text-suave hover:bg-roxo-50 disabled:opacity-30" aria-label="Próximo (→)" title="Próximo (→)"><ChevronRight size={20} /></button>
+            <button onClick={onFechar} className="grid size-11 place-items-center rounded-[10px] text-suave hover:bg-roxo-50" aria-label="Fechar (Esc)" title="Fechar (Esc)"><X size={20} /></button>
           </div>
         </header>
 
@@ -169,7 +169,7 @@ function Concorrencia({ r }: { r: Recomendacao }) {
         <tbody className="divide-y divide-linha">
           {r.concorrentes.map((c) => (
             <tr key={c.nome} className={c.disponivel !== "Sim" ? "text-suave line-through" : ""}>
-              <td className="py-1.5">{c.nome}<span className="block text-[11px] text-suave no-underline">matching {c.matching?.toLowerCase()}</span></td>
+              <td className="py-1.5">{c.nome}<span className="block text-xs text-suave no-underline">matching {c.matching?.toLowerCase()}</span></td>
               <td className="num py-1.5 text-right">{moeda(c.preco)}</td>
               <td className="num py-1.5 text-right">{moeda(c.frete)}</td>
               <td className="num py-1.5 text-right">{c.coleta ? dataHoraBR(c.coleta) : "—"}</td>
@@ -194,7 +194,7 @@ function Vendas({ r }: { r: Recomendacao }) {
         {r.vendas.map((v) => (
           <div key={v.mes} className="flex flex-1 flex-col items-center gap-1">
             <div className="w-full rounded-t bg-roxo-100" style={{ height: `${(v.quantidade / max) * 64}px` }} title={`${mesCurto(v.mes)}: ${v.quantidade} un.`} />
-            <span className="text-[9px] text-suave">{mesCurto(v.mes)[0]}</span>
+            <span className="text-xs text-suave">{mesCurto(v.mes)[0]}</span>
           </div>
         ))}
       </div>

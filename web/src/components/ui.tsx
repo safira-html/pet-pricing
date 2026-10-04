@@ -38,7 +38,7 @@ export function RiscoBadge({ risco }: { risco: Risco }) {
 
 export function ModoBadge({ modo }: { modo: Modo }) {
   return modo === "autopiloto" ? (
-    <span className="inline-flex items-center rounded-full bg-roxo px-2 py-0.5 text-xs font-medium text-white">Piloto automático</span>
+    <span className="inline-flex items-center rounded-full bg-roxo-50 px-2 py-0.5 text-xs font-medium text-roxo-800 ring-1 ring-roxo-100">Piloto automático</span>
   ) : (
     <span className="inline-flex items-center rounded-full border border-linha px-2 py-0.5 text-xs font-medium text-suave">Copiloto</span>
   );
@@ -48,7 +48,7 @@ export function SinteticoTag() {
   return (
     <span
       title="Custo alterado nos cenários sintéticos para demonstrar as quatro ações. Não é dado da Popular Pet."
-      className="inline-flex items-center rounded border border-dashed border-revisar px-1.5 text-[10px] font-semibold uppercase tracking-wider text-revisar"
+      className="inline-flex items-center rounded border border-dashed border-revisar px-1.5 text-xs font-semibold uppercase tracking-wider text-revisar"
     >
       sintético
     </span>
@@ -78,7 +78,7 @@ export function Botao({
     <button
       {...props}
       className={clsx(
-        "inline-flex items-center justify-center gap-2 rounded-[10px] px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-45",
+        "inline-flex h-11 items-center justify-center gap-2 rounded-[10px] px-4 text-sm font-semibold whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-45",
         variante === "primario" && "bg-roxo text-white hover:bg-roxo-700",
         variante === "secundario" && "border border-roxo text-roxo hover:bg-roxo-50",
         variante === "fantasma" && "text-roxo hover:bg-roxo-50",

@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { Check } from "lucide-react";
+import { Check, LogIn } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -81,8 +81,8 @@ export default function Entrar() {
             Seu nome <span className="font-normal text-suave">(aparece no histórico de decisões)</span>
             <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Safira" className="mt-1.5 w-full rounded-[10px] border border-linha bg-superficie px-3 py-2.5 text-sm outline-none focus:border-roxo" />
           </label>
-          <Botao className="mt-6 w-full py-3" onClick={() => { p.entrar(perfil, nome.trim()); router.push("/"); }}>
-            Entrar como {PERFIS[perfil].nome.toLowerCase()}
+          <Botao className="mt-6 h-12 w-full" onClick={() => { p.entrar(perfil, nome.trim()); router.push("/"); }}>
+            <LogIn size={18} /> Entrar
           </Botao>
           <p className="mt-4 text-xs text-suave">Em produção, o acesso seria pela conta corporativa da Popular Pet, com perfis definidos pela área comercial.</p>
         </div>

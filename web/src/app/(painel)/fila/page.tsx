@@ -89,12 +89,12 @@ function Fila() {
             aria-selected={grupo === id}
             onClick={() => { const q = new URLSearchParams(sp.toString()); q.set("grupo", id); q.delete("acao"); router.replace(`${path}?${q}`, { scroll: false }); setSel(new Set()); }}
             className={clsx("flex items-center gap-3 rounded-[14px] border px-4 py-3 text-left transition-colors",
-              grupo === id ? "border-roxo bg-roxo text-white" : "border-linha bg-superficie hover:border-roxo")}
+              grupo === id ? "border-roxo bg-roxo-50 ring-1 ring-roxo" : "border-linha bg-superficie hover:border-roxo")}
           >
-            <Icone size={20} className={grupo === id ? "text-limao" : "text-roxo"} aria-hidden />
+            <Icone size={20} className="text-roxo" aria-hidden />
             <span className="min-w-0">
-              <span className="num block font-display text-xl leading-none font-semibold">{contagem[id]}</span>
-              <span className={clsx("text-xs", grupo === id ? "text-roxo-100" : "text-suave")}>{rotulo}</span>
+              <span className="num block font-display text-xl leading-none font-semibold text-tinta">{contagem[id]}</span>
+              <span className={clsx("text-sm", grupo === id ? "font-medium text-roxo-800" : "text-suave")}>{rotulo}</span>
             </span>
           </button>
         ))}
@@ -179,7 +179,7 @@ function LinhaFila({ r, selecionado, podeRapido, onSel, onAbrir }: {
           <p className="truncate text-sm text-tinta" title={resumoCurto(r)}>
             {d ? <strong className="text-limao-700">✓ {d.tipo === "rejeitar" ? "Rejeitada" : d.tipo === "revisar" ? "Em revisão" : "Aprovada"} por {d.autor}</strong> : resumoCurto(r)}
           </p>
-          <div className="mt-1.5 flex flex-wrap gap-1.5 text-[11px]">
+          <div className="mt-1.5 flex flex-wrap gap-1.5 text-xs">
             <Fato alerta={abaixoMin}>margem {pct(r.margem.atual)} <span className="opacity-70">/ mín. {pct(r.margem.minima, 0)}</span></Fato>
             {r.preco_mercado != null && <Fato>{pos === "alinhado" ? "no preço do mercado" : `${pct(Math.abs(r.diferenca_mercado ?? 0))} ${pos} do mercado`}</Fato>}
             <Fato alerta={r.estoque.cobertura_dias < 15}>{r.estoque.cobertura_dias} dias de estoque</Fato>
@@ -189,11 +189,11 @@ function LinhaFila({ r, selecionado, podeRapido, onSel, onAbrir }: {
         <div className="col-start-3 row-span-3 row-start-1 flex items-center gap-1.5 lg:col-start-auto lg:row-span-1 lg:row-start-auto">
           {podeRapido && !d && (
             <button onClick={() => p.decidir(r.id, "aprovar", { preco: r.preco_sugerido })} title={`Aprovar ${moeda(r.preco_sugerido)}`}
-              className="flex items-center gap-1.5 rounded-[10px] border-2 border-subir/40 px-3 py-1.5 text-sm font-semibold text-subir hover:bg-subir-bg">
+              className="flex h-11 items-center gap-1.5 rounded-[10px] border-2 border-subir/40 px-3 text-sm font-semibold text-subir hover:bg-subir-bg">
               <Check size={16} strokeWidth={2.6} /> {r.acao === "MANTER" ? "Manter" : "Aprovar"}
             </button>
           )}
-          <button onClick={onAbrir} className="rounded-[10px] p-2 text-suave hover:bg-roxo-50 hover:text-roxo" aria-label={`Abrir ${r.produto}, ${r.canal}`}>
+          <button onClick={onAbrir} className="grid size-11 place-items-center rounded-[10px] text-suave hover:bg-roxo-50 hover:text-roxo" aria-label={`Abrir ${r.produto}, ${r.canal}`}>
             <ChevronRight size={20} />
           </button>
         </div>

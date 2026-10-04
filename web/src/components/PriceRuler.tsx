@@ -85,7 +85,7 @@ export function MapaPreco({ r }: { r: Recomendacao }) {
       <div className="mt-4 grid grid-cols-[minmax(130px,auto)_1fr_auto] items-center gap-x-4 text-sm">
         <div />
         <div className="relative h-6">
-          <div className="absolute inset-y-0 flex items-center justify-center rounded-t-md border-x border-t border-dashed border-roxo bg-roxo-50 text-[11px] font-medium text-roxo-700"
+          <div className="absolute inset-y-0 flex items-center justify-center rounded-t-md border-x border-t border-dashed border-roxo bg-roxo-50 text-xs font-medium text-roxo-700"
             style={{ left: x(r.limite_inferior), width: `calc(${x(r.limite_superior)} - ${x(r.limite_inferior)})` }}>
             <span className="truncate px-1">alcance de uma decisão (±5%)</span>
           </div>
@@ -95,7 +95,7 @@ export function MapaPreco({ r }: { r: Recomendacao }) {
           <Linha key={l.rotulo} {...l} ultima={i === linhas.length - 1} faixa={{ esq: x(r.limite_inferior), dir: x(r.limite_superior) }} />
         ))}
         <div />
-        <div className="relative h-5 text-[11px] text-suave">
+        <div className="relative h-5 text-xs text-suave">
           <span className="absolute -translate-x-1/2 num" style={{ left: x(r.limite_inferior) }}>{moeda(r.limite_inferior)}</span>
           <span className="absolute -translate-x-1/2 num" style={{ left: x(r.limite_superior) }}>{moeda(r.limite_superior)}</span>
         </div>

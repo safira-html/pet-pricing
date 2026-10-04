@@ -1,6 +1,7 @@
 "use client";
 
 import clsx from "clsx";
+import { Database, RotateCcw, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { Botao, Card, SinteticoTag, Titulo } from "@/components/ui";
@@ -50,19 +51,19 @@ export default function Base() {
                   <p className="flex items-center gap-2 font-display text-lg font-semibold text-tinta">{BASES[c].titulo} {c === "sintetico" && <SinteticoTag />}</p>
                   <p className="mt-1 text-sm text-texto">{BASES[c].texto}</p>
                 </div>
-                {ativa && <span className="rounded-full bg-roxo px-2.5 py-0.5 text-xs font-semibold text-white">Em uso</span>}
+                {ativa && <span className="rounded-full bg-subir-bg px-2.5 py-0.5 text-xs font-semibold text-subir">Em uso</span>}
               </div>
               {!ativa && (
                 confirmar === c ? (
                   <div className="mt-4 rounded-[10px] bg-revisar-bg p-3 text-sm text-revisar">
                     Trocar a base apaga as decisões desta sessão.
                     <div className="mt-2 flex gap-2">
-                      <Botao onClick={() => { p.trocarCenario(c); setConfirmar(null); }}>Trocar e apagar decisões</Botao>
+                      <Botao variante="perigo" onClick={() => { p.trocarCenario(c); setConfirmar(null); }}><Trash2 size={16} /> Trocar base</Botao>
                       <Botao variante="fantasma" onClick={() => setConfirmar(null)}>Cancelar</Botao>
                     </div>
                   </div>
                 ) : (
-                  <Botao variante="secundario" className="mt-4" onClick={() => (p.decisoes.length ? setConfirmar(c) : p.trocarCenario(c))}>Usar esta base</Botao>
+                  <Botao variante="secundario" className="mt-4" onClick={() => (p.decisoes.length ? setConfirmar(c) : p.trocarCenario(c))}><Database size={16} /> Usar esta base</Botao>
                 )
               )}
               {c === "sintetico" && (
@@ -74,14 +75,14 @@ export default function Base() {
       </div>
 
       <Card>
-        <Titulo eyebrow="Roteiro para a banca" acao={<Botao variante="perigo" onClick={p.recomecar}>Recomeçar demonstração</Botao>}>
+        <Titulo eyebrow="Roteiro para a banca" acao={<Botao variante="secundario" onClick={p.recomecar}><RotateCcw size={16} /> Recomeçar</Botao>}>
           Demonstração em 6 passos
         </Titulo>
         <ol className="grid gap-3 md:grid-cols-2">
           {TRILHA.map((t, i) => (
             <li key={t.titulo}>
               <Link href={t.href} className="flex gap-3 rounded-[12px] border border-linha p-4 hover:border-roxo">
-                <span className="num grid size-7 shrink-0 place-items-center rounded-full bg-roxo text-sm font-semibold text-white">{i + 1}</span>
+                <span className="num grid size-7 shrink-0 place-items-center rounded-full bg-roxo-50 text-sm font-semibold text-roxo-800 ring-1 ring-roxo-100">{i + 1}</span>
                 <span>
                   <span className="block font-semibold text-tinta">{t.titulo}</span>
                   <span className="text-sm text-suave">{t.texto}</span>

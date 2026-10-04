@@ -53,13 +53,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                 aria-current={ativo ? "page" : undefined}
                 className={clsx(
                   "flex shrink-0 items-center gap-3 rounded-[10px] px-3 py-2 text-sm font-medium transition-colors",
-                  ativo ? "bg-roxo text-white" : "text-texto hover:bg-roxo-50",
+                  ativo ? "bg-roxo-50 font-semibold text-roxo-800 shadow-[inset_3px_0_0_var(--roxo)]" : "text-texto hover:bg-roxo-50",
                 )}
               >
                 <Icone size={17} aria-hidden />
                 {rotulo}
                 {href === "/pilotagem" && aguardandoVeto > 0 && (
-                  <span className={clsx("ml-auto rounded-full px-1.5 text-xs", ativo ? "bg-white text-roxo" : "bg-limao text-tinta")}>{aguardandoVeto}</span>
+                  <span className={clsx("ml-auto rounded-full px-1.5 text-xs", ativo ? "bg-roxo text-white" : "bg-limao text-tinta")}>{aguardandoVeto}</span>
                 )}
               </Link>
             );
@@ -75,11 +75,11 @@ export function AppShell({ children }: { children: ReactNode }) {
               <p className="truncate text-xs font-semibold text-tinta">{p.nome || PERFIS[p.perfil].nome}</p>
               <p className="text-xs text-roxo">{PERFIS[p.perfil].nome}</p>
             </div>
-            <button onClick={() => { p.sair(); router.replace("/entrar"); }} className="rounded-md p-1.5 text-suave hover:bg-white hover:text-roxo" aria-label="Trocar de perfil">
+            <button onClick={() => { p.sair(); router.replace("/entrar"); }} className="grid size-11 place-items-center rounded-[10px] text-suave hover:bg-white hover:text-roxo" aria-label="Trocar de perfil" title="Trocar de perfil">
               <LogOut size={16} />
             </button>
           </div>
-          <p className="flex gap-1.5 text-[11px] leading-snug text-suave">
+          <p className="flex gap-1.5 text-xs leading-snug text-suave">
             <BookOpenCheck size={14} className="shrink-0" aria-hidden />
             Protótipo acadêmico do ITA Challenge Sprint. Não é um sistema oficial da Popular Pet.
           </p>

@@ -143,7 +143,7 @@ export default function VisaoGeral() {
         </Card>
 
         <Card>
-          <Titulo eyebrow="Agrupados por regra">Alertas da base</Titulo>
+          <Titulo eyebrow="Agrupados por regra">Regras acionadas</Titulo>
           <ul className="space-y-2 text-sm">
             {alertas.map((g) => (
               <li key={g.texto} className="flex items-center justify-between gap-3">

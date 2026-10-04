@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import oficial from "@/data/oficial.json";
 import sintetico from "@/data/sintetico.json";
 import type {
-  Agendamento, BaseDados, Cenario, ConfigPiloto, Decisao, Evento, Modo, Perfil, Recomendacao, TipoDecisao,
+  Agendamento, BaseDados, Cenario, ConfigPiloto, Decisao, Evento, Modo, Perfil, Recomendacao, RegraPiloto, TipoDecisao,
 } from "./types";
 
 const BASES: Record<Cenario, BaseDados> = {
@@ -30,7 +30,9 @@ interface Estado {
   nome: string;
   cenario: Cenario;
   decisoes: Decisao[];
+  /** Exceções por item: valem acima das regras de grupo. */
   modos: Record<string, Modo>;
+  regrasPiloto: RegraPiloto[];
   piloto: ConfigPiloto;
   agendamentos: Agendamento[];
   eventos: Evento[];
@@ -44,6 +46,7 @@ const INICIAL: Estado = {
   cenario: "oficial",
   decisoes: [],
   modos: {},
+  regrasPiloto: [],
   piloto: { ligado: false, teto: 0.03, janelaVetoHoras: 24 },
   agendamentos: [],
   eventos: [],
@@ -56,6 +59,16 @@ const AVISO: Record<TipoDecisao, string> = { aprovar: "Aprovada", editar: "Ajust
 const CHAVE = "pet-pricing-v2";
 const uid = () => Math.random().toString(36).slice(2, 10);
 const agora = () => new Date().toISOString();
+
+export function cobre(g: Pick<RegraPiloto, "curva" | "canal" | "categoria">, r: Recomendacao) {
+  return (!g.curva || r.curva === g.curva) && (!g.canal || r.canal === g.canal) && (!g.categoria || r.categoria === g.categoria);
+}
+
+export function descreverRegra(g: Pick<RegraPiloto, "curva" | "canal" | "categoria">) {
+  const onde = !g.canal ? "em qualquer canal" : g.canal === "Loja física" ? "na loja física" : g.canal === "E-commerce" ? "no e-commerce" : "no marketplace";
+  const quem = [g.categoria ?? "Todos os produtos", g.curva ? `da curva ${g.curva}` : null].filter(Boolean).join(" ");
+  return `${quem} ${onde}`;
+}
 
 /** Uma recomendação pode ir para o piloto automático? Regras propostas na V2. */
 export function elegivelPiloto(r: Recomendacao, teto: number) {
@@ -77,7 +90,11 @@ interface Ctx extends Estado {
   trocarCenario: (c: Cenario) => void;
   recomecar: () => void;
   modoDe: (recId: string) => Modo;
+  origemModo: (recId: string) => "exceção" | "regra" | "padrão";
   definirModo: (recIds: string[], modo: Modo, rotulo: string) => void;
+  limparExcecao: (recIds: string[]) => void;
+  adicionarRegraPiloto: (r: Omit<RegraPiloto, "id" | "criadaEm">) => void;
+  removerRegraPiloto: (id: string) => void;
   configurarPiloto: (c: Partial<ConfigPiloto>) => void;
   marcarAbertura: (recId: string) => void;
   decidir: (recId: string, tipo: TipoDecisao, opts: { preco?: number | null; justificativa?: string }) => void;
@@ -126,7 +143,18 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
 
   const pode = useCallback((p: Permissao) => (estado.perfil ? PERMISSOES[estado.perfil].includes(p) : false), [estado.perfil]);
 
-  const modoDe = useCallback((recId: string) => estado.modos[recId] ?? "copiloto", [estado.modos]);
+  const porId = useMemo(() => new Map(recs.map((r) => [r.id, r])), [recs]);
+  const regraCobre = useCallback(
+    (recId: string) => {
+      const r = porId.get(recId);
+      return !!r && estado.regrasPiloto.some((g) => cobre(g, r));
+    },
+    [porId, estado.regrasPiloto],
+  );
+  const modoDe = useCallback(
+    (recId: string): Modo => estado.modos[recId] ?? (regraCobre(recId) ? "autopiloto" : "copiloto"),
+    [estado.modos, regraCobre],
+  );
 
   const previaPiloto = useCallback(
     () =>
@@ -147,6 +175,7 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
       carregado,
       pode,
       modoDe,
+      origemModo: (recId) => (estado.modos[recId] ? "exceção" : regraCobre(recId) ? "regra" : "padrão"),
       previaPiloto,
       entrar: (perfil, nome) => {
         setEstado((s) => ({ ...s, perfil, nome }));
@@ -154,7 +183,7 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
       },
       sair: () => setEstado((s) => ({ ...s, perfil: null, nome: "" })),
       trocarCenario: (c) => {
-        setEstado((s) => ({ ...s, cenario: c, decisoes: [], agendamentos: [], modos: {}, abertoEm: {} }));
+        setEstado((s) => ({ ...s, cenario: c, decisoes: [], agendamentos: [], modos: {}, regrasPiloto: [], abertoEm: {} }));
         registrar({ autor, tipo: "base", texto: c === "oficial" ? "Trocou para a base oficial do desafio." : "Trocou para os cenários sintéticos." });
       },
       recomecar: () =>
@@ -166,6 +195,23 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
           return { ...s, modos };
         });
         registrar({ autor, tipo: "modo", texto: `${rotulo}: ${recIds.length} itens em ${modo === "autopiloto" ? "piloto automático" : "copiloto"}.` });
+      },
+      limparExcecao: (recIds) => {
+        setEstado((s) => {
+          const modos = { ...s.modos };
+          recIds.forEach((id) => delete modos[id]);
+          return { ...s, modos };
+        });
+        registrar({ autor, tipo: "modo", texto: `devolveu ${recIds.length} ${recIds.length === 1 ? "item" : "itens"} às regras de grupo.` });
+      },
+      adicionarRegraPiloto: (g) => {
+        setEstado((s) => ({ ...s, regrasPiloto: [...s.regrasPiloto, { ...g, id: uid(), criadaEm: agora() }] }));
+        registrar({ autor, tipo: "modo", texto: `criou a regra de piloto automático “${descreverRegra(g)}”.` });
+      },
+      removerRegraPiloto: (id) => {
+        const g = estado.regrasPiloto.find((x) => x.id === id);
+        setEstado((s) => ({ ...s, regrasPiloto: s.regrasPiloto.filter((x) => x.id !== id) }));
+        if (g) registrar({ autor, tipo: "modo", texto: `removeu a regra “${descreverRegra(g)}”.` });
       },
       configurarPiloto: (c) => {
         setEstado((s) => ({ ...s, piloto: { ...s.piloto, ...c } }));
@@ -246,7 +292,7 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
         return alvo.length;
       },
     }),
-    [estado, base, recs, carregado, pode, modoDe, previaPiloto, registrar, autor],
+    [estado, base, recs, carregado, pode, modoDe, previaPiloto, registrar, autor, regraCobre],
   );
 
   return <Contexto.Provider value={valor}>{children}</Contexto.Provider>;
