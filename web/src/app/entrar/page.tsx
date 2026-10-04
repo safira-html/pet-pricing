@@ -30,11 +30,23 @@ export default function Entrar() {
         <div>
           <p className="mb-4 text-sm font-semibold uppercase tracking-[0.16em] text-limao">Pet Pricing</p>
           <h1 className="max-w-md font-display text-4xl leading-tight font-semibold text-white">
-            Cada preço com um motivo que dá para conferir.
+            Subir, baixar ou manter: decida cada preço vendo o porquê.
           </h1>
           <p className="mt-5 max-w-md text-base text-roxo-100">
-            Concorrência, custo, margem, vendas e estoque viram uma recomendação por produto e canal: subir, baixar, manter ou revisar. A decisão final é de quem opera.
+            O Pet Pricing cruza concorrência, custo, margem, vendas e estoque e recomenda o que fazer com cada produto em cada canal. A decisão final é sempre de quem opera.
           </p>
+          <ul className="mt-8 max-w-md space-y-3 text-sm text-white">
+            {[
+              "Nenhuma recomendação abaixo da margem mínima",
+              "Aprovação em um clique quando nenhuma regra pede motivo",
+              "Toda decisão registrada com autor, horário e motivo",
+            ].map((t) => (
+              <li key={t} className="flex items-start gap-2.5">
+                <Check size={18} className="mt-0.5 shrink-0 text-limao" aria-hidden />
+                {t}
+              </li>
+            ))}
+          </ul>
         </div>
         <p className="text-xs text-roxo-100">Protótipo acadêmico do ITA Challenge Sprint · Grupo 12. Não é um sistema oficial da Popular Pet.</p>
       </section>
