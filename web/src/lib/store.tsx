@@ -7,6 +7,7 @@ import type {
   Agendamento, BaseDados, Cenario, ConfigPiloto, Decisao, Evento, Modo, Outcome, ParametrosBase, Perfil, Recomendacao, RegraPiloto, RegraPreco, TipoDecisao,
 } from "./types";
 import { PARAMETROS_PADRAO } from "./types";
+import { moeda } from "./format";
 import { recalculateAll } from "./recalcular";
 import { DEFAULT_MARGIN_FORMULA, MARGIN_FORMULAS, type MarginFormula } from "./margin";
 import { buildLearnings, estimateElasticity, MEASUREMENT_DAYS, segmentKey, simulateOutcome, type SegmentLearning } from "./impact";
@@ -44,7 +45,8 @@ interface Estado {
   agendamentos: Agendamento[];
   eventos: Evento[];
   abertoEm: Record<string, string>;
-  aviso: { texto: string; recId: string } | null;
+  /** Aviso com Desfazer: guarda o estado anterior dos itens para restaurar. */
+  aviso: { texto: string; recIds: string[]; antes: { decisoes: Decisao[]; agendamentos: Agendamento[] } } | null;
   marginFormula: MarginFormula;
   outcomes: Outcome[];
   /** Aprendizados que o gestor decidiu não aplicar ao piloto automático. */
@@ -121,6 +123,10 @@ interface Ctx extends Estado {
   configurarPiloto: (c: Partial<ConfigPiloto>) => void;
   marcarAbertura: (recId: string) => void;
   decidir: (recId: string, tipo: TipoDecisao, opts: { preco?: number | null; justificativa?: string }) => void;
+  /** Aprovação em lote: um aviso só, e o Desfazer volta todos os itens. */
+  decidirLote: (itens: { recId: string; preco: number | null }[], justificativa: string) => void;
+  /** O preço deste item já foi aplicado neste ciclo? */
+  aplicado: (recId: string) => boolean;
   decisaoDe: (recId: string) => Decisao | undefined;
   vetar: (agId: string) => void;
   previaPiloto: () => Recomendacao[];
@@ -135,7 +141,7 @@ interface Ctx extends Estado {
   dismissLearning: (key: string, reason: string) => void;
   restoreLearning: (key: string) => void;
   rodarPiloto: () => number;
-  desfazer: (recId: string) => void;
+  desfazer: () => void;
   fecharAviso: () => void;
 }
 
@@ -152,7 +158,12 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
       if (salvo) {
         const lido = JSON.parse(salvo);
         // eslint-disable-next-line react-hooks/set-state-in-effect
-        setEstado({ ...INICIAL, ...lido, parametros: { ...PARAMETROS_PADRAO, ...(lido.parametros ?? {}) }, aviso: null });
+        setEstado({
+          ...INICIAL, ...lido,
+          parametros: { ...PARAMETROS_PADRAO, ...(lido.parametros ?? {}) },
+          piloto: { ...INICIAL.piloto, ...(lido.piloto ?? {}) },
+          aviso: null,
+        });
       }
     } catch {
       /* sem armazenamento: segue com o estado inicial */
@@ -188,6 +199,9 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
     setEstado((s) => ({ ...s, eventos: [{ ...e, id: uid(), quando: agora() }, ...s.eventos].slice(0, 400) }));
   }, []);
 
+  // Estável entre renderizações, para o temporizador do aviso não reiniciar a cada mudança.
+  const fecharAviso = useCallback(() => setEstado((s) => ({ ...s, aviso: null })), []);
+
   const pode = useCallback((p: Permissao) => (estado.perfil ? PERMISSOES[estado.perfil].includes(p) : false), [estado.perfil]);
 
   const porId = useMemo(() => new Map(recs.map((r) => [r.id, r])), [recs]);
@@ -209,10 +223,75 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
         (r) =>
           modoDe(r.id) === "autopiloto" &&
           eligibility(r).elegivel &&
-          !estado.decisoes.some((d) => d.recId === r.id),
+          !estado.decisoes.some((d) => d.recId === r.id) &&
+          // item vetado ou já agendado não volta para a prévia neste ciclo
+          !estado.agendamentos.some((a) => a.recId === r.id),
       ),
-    [recs, modoDe, eligibility, estado.decisoes],
+    [recs, modoDe, eligibility, estado.decisoes, estado.agendamentos],
   );
+
+  /**
+   * Mudanças do piloto ainda em janela de veto foram calculadas com as regras antigas.
+   * Quando fórmula, regras, parâmetros ou proteções mudam, elas são canceladas.
+   */
+  const pendentesPiloto = estado.agendamentos.filter((a) => a.status === "aguardando veto");
+  const cancelarPiloto = (s: Estado): Estado => {
+    const ids = new Set(s.agendamentos.filter((a) => a.status === "aguardando veto").map((a) => a.recId));
+    if (!ids.size) return s;
+    return {
+      ...s,
+      agendamentos: s.agendamentos.map((a) => (a.status === "aguardando veto" ? { ...a, status: "cancelado" } : a)),
+      decisoes: s.decisoes.filter((d) => !(d.perfil === "sistema" && ids.has(d.recId))),
+    };
+  };
+  const avisarCancelamento = () => {
+    if (!pendentesPiloto.length) return;
+    const n = pendentesPiloto.length;
+    registrar({ autor: "Sistema", tipo: "piloto automático", texto: `cancelou ${n} ${n === 1 ? "mudança" : "mudanças"} do piloto em janela de veto, porque as regras mudaram. Agende de novo pela prévia.` });
+  };
+  const aplicadoSet = new Set(estado.agendamentos.filter((a) => a.status === "aplicado").map((a) => a.recId));
+  const decidirItens = (itens: { recId: string; preco: number | null }[], tipo: TipoDecisao, justificativa: string) => {
+    // Item com preço já aplicado só volta a ser decidido no próximo ciclo.
+    const validos = itens.map((i) => ({ ...i, r: porId.get(i.recId) })).filter((i) => i.r && !aplicadoSet.has(i.recId));
+    if (!validos.length) return;
+    const ids = new Set(validos.map((i) => i.recId));
+    const aplica = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
+    const aceita = tipo === "aprovar" || tipo === "editar" || tipo === "etapa_rampa";
+    const novas: Decisao[] = [];
+    const agendas: Agendamento[] = [];
+    for (const { recId, preco, r } of validos) {
+      const aberto = estado.abertoEm[recId];
+      const seg = aberto ? Math.max(1, Math.round((Date.now() - new Date(aberto).getTime()) / 1000)) : null;
+      // Manter o mesmo preço é decisão registrada, mas não vira mudança agendada.
+      const vaiAgendar = aceita && preco != null && Math.abs(preco - r!.preco_atual) > 0.004;
+      novas.push({
+        id: uid(), recId, tipo, preco, justificativa, autor, perfil: estado.perfil ?? "visitante",
+        quando: agora(), segundosAteDecidir: seg, agendadoPara: vaiAgendar ? aplica : null,
+      });
+      if (vaiAgendar) agendas.push({ id: uid(), recId, preco: preco!, origem: "humano", criadoEm: agora(), aplicaEm: aplica, status: "agendado" });
+    }
+    const primeiro = validos[0];
+    const texto = validos.length === 1
+      ? `${AVISO[tipo]}: ${primeiro.r!.produto} · ${primeiro.r!.canal}${primeiro.preco != null ? ` a ${moeda(primeiro.preco)}` : ""}`
+      : `${validos.length} itens ${tipo === "aprovar" ? "aprovados" : "decididos"}`;
+    setEstado((s) => ({
+      ...s,
+      decisoes: [...novas, ...s.decisoes.filter((x) => !ids.has(x.recId))],
+      agendamentos: [...agendas, ...s.agendamentos.filter((a) => !ids.has(a.recId))],
+      aviso: {
+        texto, recIds: [...ids],
+        antes: { decisoes: s.decisoes.filter((x) => ids.has(x.recId)), agendamentos: s.agendamentos.filter((a) => ids.has(a.recId)) },
+      },
+    }));
+    const nomes: Record<TipoDecisao, string> = {
+      aprovar: "aprovou", editar: "editou e aprovou", rejeitar: "rejeitou", revisar: "enviou para revisão", etapa_rampa: "aprovou a 1ª etapa da rampa de",
+    };
+    if (validos.length === 1) {
+      registrar({ autor, tipo: "decisão", recId: primeiro.recId, texto: `${nomes[tipo]} ${primeiro.r!.sku} · ${primeiro.r!.canal}${primeiro.preco != null ? ` a ${moeda(primeiro.preco)}` : ""}.` });
+    } else {
+      registrar({ autor, tipo: "decisão", texto: `${nomes[tipo]} ${validos.length} itens em lote. Motivo: ${justificativa}` });
+    }
+  };
 
   const valor: Ctx = useMemo(
     () => ({
@@ -229,8 +308,9 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
       learningFor,
       elasticity,
       setMarginFormula: (f, reason) => {
-        setEstado((s) => ({ ...s, marginFormula: f }));
+        setEstado((s) => cancelarPiloto({ ...s, marginFormula: f }));
         registrar({ autor, tipo: "configuração", texto: `trocou a fórmula de margem para “${MARGIN_FORMULAS[f].label}”. Motivo: ${reason}` });
+        avisarCancelamento();
       },
       simulateMeasurement: () => {
         const pendentes = estado.agendamentos.filter((a) => a.status === "agendado" || a.status === "aguardando veto");
@@ -269,7 +349,7 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
       },
       sair: () => setEstado((s) => ({ ...s, perfil: null, nome: "" })),
       trocarCenario: (c) => {
-        setEstado((s) => ({ ...s, cenario: c, decisoes: [], agendamentos: [], modos: {}, regrasPiloto: [], regrasPreco: [], parametros: PARAMETROS_PADRAO, estrategicos: [], abertoEm: {}, outcomes: [], dismissedLearnings: [] }));
+        setEstado((s) => ({ ...s, cenario: c, decisoes: [], agendamentos: [], modos: {}, regrasPiloto: [], regrasPreco: [], parametros: PARAMETROS_PADRAO, estrategicos: [], abertoEm: {}, outcomes: [], dismissedLearnings: [], aviso: null }));
         registrar({ autor, tipo: "base", texto: c === "oficial" ? "Trocou para a base oficial do desafio." : "Trocou para os cenários sintéticos." });
       },
       recomecar: () =>
@@ -280,7 +360,7 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
           recIds.forEach((id) => (modos[id] = modo));
           return { ...s, modos };
         });
-        registrar({ autor, tipo: "modo", texto: `${rotulo}: ${recIds.length} itens em ${modo === "autopiloto" ? "piloto automático" : "copiloto"}.` });
+        registrar({ autor, tipo: "modo", texto: `${rotulo}: ${recIds.length} ${recIds.length === 1 ? "item" : "itens"} em ${modo === "autopiloto" ? "piloto automático" : "copiloto"}.` });
       },
       limparExcecao: (recIds) => {
         setEstado((s) => {
@@ -302,29 +382,37 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
       salvarRegraPreco: (g) => {
         const nova = !g.id;
         const regra: RegraPreco = { ...g, id: g.id ?? uid(), autor, atualizadaEm: agora() };
-        setEstado((s) => ({ ...s, regrasPreco: nova ? [...s.regrasPreco, regra] : s.regrasPreco.map((x) => (x.id === regra.id ? regra : x)) }));
+        setEstado((s) => cancelarPiloto({ ...s, regrasPreco: nova ? [...s.regrasPreco, regra] : s.regrasPreco.map((x) => (x.id === regra.id ? regra : x)) }));
         registrar({ autor, tipo: "configuração", texto: `${nova ? "criou" : "editou"} a regra de preço “${g.nome}”. Motivo: ${g.justificativa}` });
+        avisarCancelamento();
       },
       alternarRegraPreco: (id) => {
         const g = estado.regrasPreco.find((x) => x.id === id);
-        setEstado((s) => ({ ...s, regrasPreco: s.regrasPreco.map((x) => (x.id === id ? { ...x, ativa: !x.ativa, atualizadaEm: agora() } : x)) }));
+        setEstado((s) => cancelarPiloto({ ...s, regrasPreco: s.regrasPreco.map((x) => (x.id === id ? { ...x, ativa: !x.ativa, atualizadaEm: agora() } : x)) }));
         if (g) registrar({ autor, tipo: "configuração", texto: `${g.ativa ? "pausou" : "reativou"} a regra de preço “${g.nome}”.` });
+        avisarCancelamento();
       },
       removerRegraPreco: (id) => {
         const g = estado.regrasPreco.find((x) => x.id === id);
-        setEstado((s) => ({ ...s, regrasPreco: s.regrasPreco.filter((x) => x.id !== id) }));
+        setEstado((s) => cancelarPiloto({ ...s, regrasPreco: s.regrasPreco.filter((x) => x.id !== id) }));
         if (g) registrar({ autor, tipo: "configuração", texto: `removeu a regra de preço “${g.nome}”.` });
+        avisarCancelamento();
       },
       definirParametro: (cod, valor, motivo) => {
-        setEstado((s) => ({ ...s, parametros: { ...s.parametros, [cod]: valor } }));
+        setEstado((s) => cancelarPiloto({ ...s, parametros: { ...s.parametros, [cod]: valor } }));
         registrar({ autor, tipo: "configuração", texto: `alterou o parâmetro da ${cod} para ${valor}. Motivo: ${motivo}` });
+        avisarCancelamento();
       },
       definirEstrategicos: (skus, motivo) => {
-        setEstado((s) => ({ ...s, estrategicos: skus }));
-        registrar({ autor, tipo: "configuração", texto: `definiu ${skus.length} produtos estratégicos (R04). Motivo: ${motivo}` });
+        setEstado((s) => cancelarPiloto({ ...s, estrategicos: skus }));
+        registrar({ autor, tipo: "configuração", texto: `definiu ${skus.length} ${skus.length === 1 ? "produto estratégico" : "produtos estratégicos"} (R04). Motivo: ${motivo}` });
+        avisarCancelamento();
       },
       configurarPiloto: (c) => {
-        setEstado((s) => ({ ...s, piloto: { ...s.piloto, ...c } }));
+        // Desligar o piloto ou apertar o teto invalida o que ainda está em janela de veto.
+        const invalida = c.ligado === false || (c.teto !== undefined && c.teto < estado.piloto.teto);
+        setEstado((s) => (invalida ? cancelarPiloto({ ...s, piloto: { ...s.piloto, ...c } }) : { ...s, piloto: { ...s.piloto, ...c } }));
+        if (invalida) avisarCancelamento();
         const partes = [];
         if (c.ligado !== undefined) partes.push(c.ligado ? "ligou o piloto automático" : "desligou o piloto automático");
         if (c.teto !== undefined) partes.push(`teto de ${(c.teto * 100).toFixed(0)}%`);
@@ -333,50 +421,33 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
       },
       marcarAbertura: (recId) =>
         setEstado((s) => (s.abertoEm[recId] ? s : { ...s, abertoEm: { ...s.abertoEm, [recId]: agora() } })),
-      decidir: (recId, tipo, { preco = null, justificativa = "" }) => {
-        const r = recs.find((x) => x.id === recId);
-        if (!r) return;
-        const aberto = estado.abertoEm[recId];
-        const seg = aberto ? Math.max(1, Math.round((Date.now() - new Date(aberto).getTime()) / 1000)) : null;
-        const aplica = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
-        const vaiAgendar = (tipo === "aprovar" || tipo === "editar" || tipo === "etapa_rampa") && preco != null;
-        const d: Decisao = {
-          id: uid(), recId, tipo, preco, justificativa, autor, perfil: estado.perfil ?? "visitante",
-          quando: agora(), segundosAteDecidir: seg, agendadoPara: vaiAgendar ? aplica : null,
-        };
-        setEstado((s) => ({
-          ...s,
-          decisoes: [d, ...s.decisoes.filter((x) => x.recId !== recId)],
-          agendamentos: vaiAgendar
-            ? [{ id: uid(), recId, preco: preco!, origem: "humano", criadoEm: agora(), aplicaEm: aplica, status: "agendado" }, ...s.agendamentos.filter((a) => a.recId !== recId)]
-            : s.agendamentos.filter((a) => a.recId !== recId),
-          aviso: { recId, texto: `${AVISO[tipo]}: ${r.produto} · ${r.canal}${preco != null ? ` a R$ ${preco.toFixed(2).replace(".", ",")}` : ""}` },
-        }));
-        const nomes: Record<TipoDecisao, string> = {
-          aprovar: "aprovou", editar: "editou e aprovou", rejeitar: "rejeitou", revisar: "enviou para revisão", etapa_rampa: "aprovou a 1ª etapa da rampa de",
-        };
-        registrar({ autor, tipo: "decisão", recId, texto: `${nomes[tipo]} ${r.sku} · ${r.canal}${preco != null ? ` a ${preco.toFixed(2)}` : ""}.` });
-      },
+      decidir: (recId, tipo, { preco = null, justificativa = "" }) => decidirItens([{ recId, preco }], tipo, justificativa),
+      decidirLote: (itens, justificativa) => decidirItens(itens, "aprovar", justificativa),
+      aplicado: (recId) => aplicadoSet.has(recId),
       decisaoDe: (recId) => estado.decisoes.find((d) => d.recId === recId),
       vetar: (agId) => {
         const ag = estado.agendamentos.find((a) => a.id === agId);
+        if (!ag || ag.status !== "aguardando veto") return;
         setEstado((s) => ({
           ...s,
           agendamentos: s.agendamentos.map((a) => (a.id === agId ? { ...a, status: "vetado" } : a)),
-          decisoes: ag ? s.decisoes.filter((d) => !(d.recId === ag.recId && d.perfil === "sistema")) : s.decisoes,
+          decisoes: s.decisoes.filter((d) => !(d.recId === ag.recId && d.perfil === "sistema")),
         }));
-        if (ag) registrar({ autor, tipo: "veto", recId: ag.recId, texto: `vetou a mudança automática de ${ag.recId.replace("|", " · ")}.` });
+        registrar({ autor, tipo: "veto", recId: ag.recId, texto: `vetou a mudança automática de ${ag.recId.replace("|", " · ")}.` });
       },
-      desfazer: (recId) => {
+      desfazer: () => {
+        const av = estado.aviso;
+        if (!av) return;
+        const ids = new Set(av.recIds);
         setEstado((s) => ({
           ...s,
-          decisoes: s.decisoes.filter((d) => d.recId !== recId),
-          agendamentos: s.agendamentos.filter((a) => a.recId !== recId),
+          decisoes: [...av.antes.decisoes, ...s.decisoes.filter((d) => !ids.has(d.recId))],
+          agendamentos: [...av.antes.agendamentos, ...s.agendamentos.filter((a) => !ids.has(a.recId))],
           aviso: null,
         }));
-        registrar({ autor, tipo: "decisão", recId, texto: `desfez a decisão de ${recId.replace("|", " · ")}.` });
+        registrar({ autor, tipo: "decisão", texto: av.recIds.length === 1 ? `desfez a decisão de ${av.recIds[0].replace("|", " · ")}.` : `desfez ${av.recIds.length} decisões.` });
       },
-      fecharAviso: () => setEstado((s) => ({ ...s, aviso: null })),
+      fecharAviso,
       rodarPiloto: () => {
         if (!estado.piloto.ligado) return 0;
         const alvo = previaPiloto();
@@ -398,11 +469,11 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
             ...s.agendamentos,
           ],
         }));
-        registrar({ autor: "Piloto automático", tipo: "piloto automático", texto: `agendou ${alvo.length} mudanças, com ${estado.piloto.janelaVetoHoras} h para veto.` });
+        registrar({ autor: "Piloto automático", tipo: "piloto automático", texto: `agendou ${alvo.length} ${alvo.length === 1 ? "mudança" : "mudanças"}, com ${estado.piloto.janelaVetoHoras} h para veto.` });
         return alvo.length;
       },
     }),
-    [estado, base, recs, carregado, pode, modoDe, previaPiloto, registrar, autor, regraCobre, eligibility, learnings, learningFor, elasticity, porId],
+    [estado, base, recs, carregado, pode, modoDe, previaPiloto, registrar, autor, regraCobre, eligibility, learnings, learningFor, elasticity, porId, fecharAviso],
   );
 
   return <Contexto.Provider value={valor}>{children}</Contexto.Provider>;

@@ -107,7 +107,7 @@ export interface Agendamento {
   origem: "humano" | "piloto automático";
   criadoEm: string;
   aplicaEm: string;
-  status: "aguardando veto" | "agendado" | "aplicado" | "vetado";
+  status: "aguardando veto" | "agendado" | "aplicado" | "vetado" | "cancelado";
 }
 
 export interface Evento {
@@ -191,5 +191,7 @@ export interface Outcome {
   profitBefore: number;
   profitAfter: number;
   verdict: OutcomeVerdict;
+  /** Fórmula de margem usada na conta da contribuição. */
+  formula: MarginFormula;
   simulated: boolean;
 }

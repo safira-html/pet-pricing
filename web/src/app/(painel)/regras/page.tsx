@@ -5,7 +5,7 @@ import { Check, Lock, Pause, Pencil, Play, Plus, SlidersHorizontal, Star, Trash2
 import { useMemo, useState } from "react";
 import { EditorRegra } from "@/components/EditorRegra";
 import { Select } from "@/components/Select";
-import { Botao, Card, Titulo, Vazio } from "@/components/ui";
+import { Botao, Card, Confirmar, Titulo, Vazio } from "@/components/ui";
 import { REGRAS } from "@/lib/explain";
 import { dataBR, pct } from "@/lib/format";
 import { MARGIN_FORMULAS, marginAt, type MarginFormula } from "@/lib/margin";
@@ -67,7 +67,7 @@ export default function Regras() {
     <div className="mx-auto max-w-6xl space-y-6">
       <header>
         <h1 className="text-2xl font-semibold">Regras e margem</h1>
-        <p className="max-w-3xl text-sm text-suave">
+        <p className="max-w-[68ch] text-sm text-suave">
           As regras protegem a operação: nenhuma recomendação passa por cima delas. {gestor
             ? "Como gestor, você escolhe a fórmula de margem, cria regras por grupo de produtos e deixa as regras da base mais rígidas. Afrouxar não é permitido."
             : "Só o gestor altera regras. Você vê o que está valendo e o efeito de cada uma."}
@@ -99,7 +99,7 @@ export default function Regras() {
       <Card>
         <div id="rampa" className="scroll-mt-6" />
         <Titulo eyebrow="Proposta da V2">Rampa de reajuste</Titulo>
-        <p className="max-w-3xl text-sm text-texto">
+        <p className="max-w-[68ch] text-sm text-texto">
           Quando o preço mínimo fica a mais de {pct(p.parametros.R02, 0)} do preço de hoje, as regras R01 (margem mínima) e R02 (variação máxima por decisão) não cabem juntas. O protótipo original mandava esses itens para revisão sem preço. A proposta é subir em etapas, com {p.parametros.R08} dias entre elas (R08), sempre com aprovação e nunca pelo piloto automático.
         </p>
         <div className="mt-4 grid grid-cols-3 gap-3 sm:max-w-lg">
@@ -149,9 +149,9 @@ function FormulaMargem({ gestor }: { gestor: boolean }) {
   return (
     <Card>
       <div id="margem" className="scroll-mt-6" />
-      <Titulo eyebrow="Decisão do grupo · a validar com o time e o mentor">Qual margem vale?</Titulo>
-      <p className="max-w-3xl text-sm text-texto">
-        O material do desafio não define a fórmula: o dicionário da base descreve a margem mínima só como “piso de margem”. A escolha muda quase tudo. O padrão é a margem de contribuição, porque o desafio lista impostos, frete e taxa do canal em “Custos e margem” e pede para considerar as diferenças entre canais.
+      <Titulo eyebrow="Decisão do grupo">Qual margem vale?</Titulo>
+      <p className="max-w-[68ch] text-sm text-texto">
+        Escolha a validar com o time e o mentor. O material do desafio não define a fórmula: o dicionário da base descreve a margem mínima só como “piso de margem”. A escolha muda quase tudo. O padrão é a margem de contribuição, porque o desafio lista impostos, frete e taxa do canal em “Custos e margem” e pede para considerar as diferenças entre canais.
       </p>
 
       <div className="mt-4 grid gap-4 md:grid-cols-2" role="radiogroup" aria-label="Fórmula de margem">
@@ -202,7 +202,7 @@ function FormulaMargem({ gestor }: { gestor: boolean }) {
           <div className="mt-3 flex flex-wrap items-end gap-2">
             <label className="min-w-64 flex-1 text-sm font-medium text-tinta">Motivo <span className="font-normal text-suave">(fica no histórico)</span>
               <input value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Ex.: Alinhado com o time em reunião"
-                className="mt-1.5 h-11 w-full rounded-[10px] border border-linha bg-superficie px-3 text-sm outline-none focus:border-roxo" />
+                className="mt-1.5 h-11 w-full rounded-[10px] border border-linha-forte bg-superficie px-3 text-sm outline-none focus:border-roxo" />
             </label>
             <Botao variante="fantasma" onClick={() => setTrocarPara(null)}><X size={16} /> Cancelar</Botao>
             <Botao disabled={motivo.trim().length < 5} onClick={() => { p.setMarginFormula(trocarPara, motivo.trim()); setTrocarPara(null); }}><Check size={16} /> Trocar fórmula</Botao>
@@ -210,7 +210,8 @@ function FormulaMargem({ gestor }: { gestor: boolean }) {
         </div>
       )}
 
-      <table className="mt-5 w-full max-w-xl text-sm">
+      <div className="mt-5 overflow-x-auto">
+      <table className="w-full min-w-[440px] max-w-xl text-sm">
         <thead className="text-left text-xs text-suave"><tr><th className="py-1 font-medium">Margem média hoje</th>{CANAIS.map((c) => <th key={c} className="py-1 text-right font-medium">{c}</th>)}</tr></thead>
         <tbody className="num">
           {FORMULAS.map((f) => (
@@ -224,6 +225,7 @@ function FormulaMargem({ gestor }: { gestor: boolean }) {
           ))}
         </tbody>
       </table>
+      </div>
       <p className="mt-3 text-xs text-suave">
         O indicador da base “margem bruta média de 31,8%” fica perto da conta bruta e continua útil como indicador mensal. {!gestor && "Só o gestor troca a fórmula."}
       </p>
@@ -252,13 +254,9 @@ function LinhaRegra({ g, gestor, onEditar }: { g: RegraPreco; gestor: boolean; o
       </div>
       {gestor && (
         confirmar ? (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-piso">Remover a regra?</span>
-            <Botao variante="fantasma" onClick={() => setConfirmar(false)}>Manter</Botao>
-            <Botao variante="perigo" onClick={() => p.removerRegraPreco(g.id)}><Trash2 size={16} /> Remover</Botao>
-          </div>
+          <Confirmar texto="Remover a regra? Os itens voltam à regra da base." acao="Remover" onCancelar={() => setConfirmar(false)} onConfirmar={() => p.removerRegraPreco(g.id)} />
         ) : (
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-2">
             <Botao variante="fantasma" onClick={onEditar}><Pencil size={16} /> Editar</Botao>
             <Botao variante="fantasma" onClick={() => p.alternarRegraPreco(g.id)}>
               {g.ativa ? <><Pause size={16} /> Pausar</> : <><Play size={16} /> Reativar</>}
@@ -319,12 +317,13 @@ function LinhaRegraBase({ id, tema, regra, ocorrencias, gestor }: { id: string; 
             {st?.estado}
           </span>
           {podeAjustar ? (
-            <Botao variante="secundario" className="h-9 px-3" aria-expanded={aberto} onClick={() => { setAberto(!aberto); setValor(atual ?? 0); setSkus(p.estrategicos); }}>
-              {ehR04 ? <Star size={15} /> : <SlidersHorizontal size={15} />} {ehR04 ? "Marcar" : "Ajustar"}
+            <Botao variante="secundario" aria-expanded={aberto} onClick={() => { setAberto(!aberto); setValor(atual ?? 0); setSkus(p.estrategicos); }}>
+              {ehR04 ? <Star size={16} /> : <SlidersHorizontal size={16} />} {ehR04 ? "Marcar" : "Ajustar"}
             </Botao>
           ) : (
-            <span className="grid size-9 place-items-center text-suave" title={gestor ? "Regra fixa: não tem parâmetro ajustável no protótipo" : "Só o gestor ajusta regras"}>
-              <Lock size={15} aria-label={gestor ? "Regra fixa" : "Só o gestor ajusta"} />
+            <span className="grid size-11 place-items-center text-suave" title={gestor ? "Regra fixa: não tem parâmetro ajustável no protótipo" : "Só o gestor ajusta regras"}>
+              <Lock size={16} aria-hidden />
+              <span className="sr-only">{gestor ? "Regra fixa" : "Só o gestor ajusta"}</span>
             </span>
           )}
         </div>
@@ -348,7 +347,7 @@ function LinhaRegraBase({ id, tema, regra, ocorrencias, gestor }: { id: string; 
           <div className="mt-3 flex flex-wrap items-end gap-2">
             <label className="min-w-64 flex-1 text-sm font-medium text-tinta">Motivo <span className="font-normal text-suave">(fica no histórico)</span>
               <input value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Ex.: Período de reajuste de fornecedor"
-                className="mt-1.5 h-11 w-full rounded-[10px] border border-linha bg-superficie px-3 text-sm outline-none focus:border-roxo" />
+                className="mt-1.5 h-11 w-full rounded-[10px] border border-linha-forte bg-superficie px-3 text-sm outline-none focus:border-roxo" />
             </label>
             <Botao variante="fantasma" onClick={() => setAberto(false)}>Cancelar</Botao>
             <Botao disabled={!mudou || motivo.trim().length < 5} onClick={salvar}><Check size={16} /> Salvar</Botao>

@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { manchete } from "@/lib/explain";
+import { limiteTxt, manchete } from "@/lib/explain";
 import { moeda, pct } from "@/lib/format";
 import type { Recomendacao } from "@/lib/types";
 
@@ -87,7 +87,7 @@ export function MapaPreco({ r }: { r: Recomendacao }) {
         <div className="relative h-6">
           <div className="absolute inset-y-0 flex items-center justify-center rounded-t-md border-x border-t border-dashed border-roxo bg-roxo-50 text-xs font-medium text-roxo-700"
             style={{ left: x(r.limite_inferior), width: `calc(${x(r.limite_superior)} - ${x(r.limite_inferior)})` }}>
-            <span className="truncate px-1">alcance de uma decisão (±5%)</span>
+            <span className="truncate px-1">alcance de uma decisão (±{limiteTxt(r)})</span>
           </div>
         </div>
         <div />
@@ -137,7 +137,7 @@ export function Movimento({ r }: { r: Recomendacao }) {
     return (
       <span className="text-xs">
         <span className="font-semibold text-revisar">precisa de {pct(r.proposta.rampa.aumento_necessario, 1, true)}</span>
-        <span className="block text-suave">acima do limite de 5%</span>
+        <span className="block text-suave">acima do limite de {limiteTxt(r)}</span>
       </span>
     );
   }

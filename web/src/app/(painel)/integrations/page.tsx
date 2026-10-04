@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { ArrowDownToLine, ArrowUpFromLine, ChevronDown, Download, FileSpreadsheet, Plug } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, Check, ChevronDown, Download, Plug } from "lucide-react";
 import { useState } from "react";
 import { Botao, Card, Titulo } from "@/components/ui";
 import { dataBR, dataHoraBR } from "@/lib/format";
@@ -9,9 +9,9 @@ import { SOURCES } from "@/lib/integrations";
 import { usePricing } from "@/lib/store";
 
 const STAGES = [
-  { n: 1, title: "Arquivo", text: "ERP e módulo de coleta exportam planilhas neste formato. O Pet Pricing importa e devolve um arquivo com os preços aprovados.", effort: "Quase nenhum esforço de TI", ready: true },
-  { n: 2, title: "Leitura automática", text: "Conectores leem do ERP e do módulo de coleta em horário agendado, sem gravar nada nesses sistemas.", effort: "Esforço médio de TI", ready: false },
-  { n: 3, title: "Gravação com aprovação", text: "O preço aprovado volta ao ERP sozinho. Fica fora do escopo de propósito: a IA não altera preço sem controle.", effort: "Esforço alto de TI", ready: false },
+  { n: 1, title: "Arquivo", text: "ERP e módulo de coleta exportam planilhas; o Pet Pricing devolve um arquivo com os preços aprovados.", effort: "Quase nenhum esforço de TI", ready: true },
+  { n: 2, title: "Leitura automática", text: "Conectores leem do ERP e do módulo de coleta em horário agendado, sem gravar nada.", effort: "Esforço médio de TI", ready: false },
+  { n: 3, title: "Gravação com aprovação", text: "O preço aprovado volta ao ERP sozinho. Fora do escopo de propósito: a IA não altera preço sem controle.", effort: "Esforço alto de TI", ready: false },
 ];
 
 function csvCell(v: string | number | null | undefined) {
@@ -23,7 +23,8 @@ export default function Integrations() {
   const p = usePricing();
   const [open, setOpen] = useState<string | null>(null);
   const lastCollection = p.recs.flatMap((r) => r.concorrentes.map((c) => c.coleta)).filter(Boolean).sort().at(-1);
-  const approved = p.agendamentos.filter((a) => a.status !== "vetado");
+  // Só sai o que já passou da janela de veto: aprovado por pessoa ou já aplicado.
+  const approved = p.agendamentos.filter((a) => a.status === "agendado" || a.status === "aplicado");
   const byId = new Map(p.recs.map((r) => [r.id, r]));
 
   const exportCsv = () => {
@@ -39,102 +40,95 @@ export default function Integrations() {
     link.href = url;
     link.download = `precos-aprovados-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
+
+  const groups = [
+    { title: "ERP", hint: "Cadastro, preços, custos, vendas, estoque e campanhas", items: SOURCES.filter((x) => x.direction === "read" && x.system !== "Módulo de coleta de concorrência") },
+    { title: "Módulo de coleta de concorrência", hint: "Já existe na Popular Pet e faz a correspondência de produtos", items: SOURCES.filter((x) => x.system === "Módulo de coleta de concorrência") },
+    { title: "Saída para o ERP", hint: "Só o que foi aprovado", items: SOURCES.filter((x) => x.direction === "write") },
+  ];
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold">Integrações</h1>
-        <p className="max-w-3xl text-sm text-suave">
-          A Popular Pet já tem um módulo que coleta os preços da concorrência e um ERP com custo, estoque e vendas. O Pet Pricing não substitui nenhum dos dois: lê o que eles já têm e devolve só os preços aprovados. No protótipo, tudo vem da base do desafio.
-        </p>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="max-w-[62ch]">
+          <h1 className="text-2xl font-semibold">Integrações</h1>
+          <p className="mt-1 text-sm text-suave">
+            O Pet Pricing não substitui o ERP nem o módulo de coleta de concorrência: lê o que eles já têm e devolve só os preços aprovados. No protótipo, os dados vêm da base do desafio.
+          </p>
+        </div>
+        <div className="flex flex-col items-start gap-1 sm:items-end">
+          <Botao disabled={!approved.length} onClick={exportCsv}><Download size={16} /> Baixar CSV</Botao>
+          <span className="text-xs text-suave">{approved.length ? `${approved.length} ${approved.length === 1 ? "preço aprovado" : "preços aprovados"}, para o ERP` : "Aprove preços na fila para gerar"}</span>
+        </div>
       </header>
 
       <Card>
-        <Titulo eyebrow="Do mais simples ao mais completo">Como conectar na prática</Titulo>
-        <ol className="grid gap-3 md:grid-cols-3">
-          {STAGES.map((s) => (
-            <li key={s.n} className={clsx("rounded-[12px] border p-4", s.ready ? "border-roxo bg-roxo-50/50" : "border-linha")}>
-              <p className="flex items-center gap-2">
-                <span className={clsx("num grid size-7 place-items-center rounded-full text-sm font-semibold", s.ready ? "bg-roxo text-white" : "bg-fundo text-suave")}>{s.n}</span>
-                <span className="font-display font-semibold text-tinta">{s.title}</span>
-              </p>
-              <p className="mt-2 text-sm text-texto">{s.text}</p>
-              <p className={clsx("mt-2 text-xs font-medium", s.ready ? "text-roxo-800" : "text-suave")}>{s.ready ? "Já funciona no protótipo" : s.effort}</p>
+        <Titulo eyebrow="Na prática">Como a conexão evolui</Titulo>
+        <ol className="grid gap-4 md:grid-cols-3 md:gap-0">
+          {STAGES.map((st, i) => (
+            <li key={st.n} className="relative md:pr-6">
+              {i < STAGES.length - 1 && <span className="absolute top-3.5 right-0 left-9 hidden h-px bg-linha md:block" aria-hidden />}
+              <span className={clsx("num relative grid size-7 place-items-center rounded-full text-sm font-semibold",
+                st.ready ? "bg-roxo text-white" : "bg-superficie text-suave ring-1 ring-linha-forte")}>
+                {st.ready ? <Check size={15} aria-hidden /> : st.n}
+              </span>
+              <p className="mt-3 font-display font-semibold text-tinta">{st.title}</p>
+              <p className="mt-1 max-w-[34ch] text-sm text-texto">{st.text}</p>
+              <p className={clsx("mt-2 text-xs font-medium", st.ready ? "text-roxo-800" : "text-suave")}>{st.ready ? "Já funciona no protótipo" : st.effort}</p>
             </li>
           ))}
         </ol>
       </Card>
 
-      <Card>
-        <Titulo eyebrow="Fontes e saídas" acao={<span className="rounded-full bg-revisar-bg px-2.5 py-1 text-xs font-semibold text-revisar">{SOURCES.length} a conectar</span>}>
-          Ferramentas da Popular Pet
-        </Titulo>
-        <ul className="divide-y divide-linha">
-          {SOURCES.map((s) => {
-            const Icon = s.icon;
-            const expanded = open === s.id;
-            return (
-              <li key={s.id} className="py-3">
-                <button onClick={() => setOpen(expanded ? null : s.id)} aria-expanded={expanded}
-                  className="grid w-full grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-3 rounded-[10px] p-1 text-left hover:bg-roxo-50/50">
-                  <span className="grid size-11 place-items-center rounded-[12px] bg-roxo-50 text-roxo"><Icon size={20} aria-hidden /></span>
-                  <span className="min-w-0">
-                    <span className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium text-tinta">{s.name}</span>
-                      <span className="inline-flex items-center gap-1 text-xs text-suave">
-                        {s.direction === "read" ? <ArrowDownToLine size={12} aria-hidden /> : <ArrowUpFromLine size={12} aria-hidden />}
-                        {s.direction === "read" ? `lê de ${s.system}` : `envia para ${s.system}`}
-                      </span>
-                    </span>
-                    <span className="block text-sm text-suave">{s.what}</span>
-                  </span>
-                  <span className="flex items-center gap-3">
-                    <span className="hidden rounded-full border border-dashed border-revisar px-2.5 py-1 text-xs font-semibold text-revisar sm:inline">A conectar</span>
-                    <ChevronDown size={18} className={clsx("text-suave transition-transform", expanded && "rotate-180")} aria-hidden />
-                  </span>
-                </button>
-                {expanded && (
-                  <div className="mt-3 grid gap-4 rounded-[12px] bg-fundo p-4 text-sm md:ml-14 md:grid-cols-2">
-                    <div>
-                      <p className="text-xs font-semibold tracking-wide text-suave uppercase">Campos esperados</p>
-                      <ul className="mt-2 flex flex-wrap gap-1.5">
-                        {s.fields.map((f) => <li key={f} className="rounded-full border border-linha bg-superficie px-2.5 py-0.5 text-xs">{f}</li>)}
-                      </ul>
-                    </div>
-                    <dl className="space-y-2">
-                      <div><dt className="text-xs text-suave">Hoje, no protótipo</dt><dd>{s.direction === "read" ? `Aba ${s.sheet} da base do desafio` : "Arquivo CSV baixado nesta tela"}</dd></div>
-                      <div><dt className="text-xs text-suave">Alimenta</dt><dd>{s.rules}</dd></div>
-                      <div><dt className="text-xs text-suave">Atualização prevista</dt><dd>{s.frequency}</dd></div>
-                      {s.id === "competitors" && lastCollection && <div><dt className="text-xs text-suave">Coleta mais recente na base</dt><dd className="num">{dataHoraBR(lastCollection)}</dd></div>}
-                    </dl>
-                    <div className="flex flex-wrap items-center gap-3 md:col-span-2">
-                      <Botao variante="secundario" disabled title="Depende de a Popular Pet indicar o sistema e liberar o acesso"><Plug size={16} /> Conectar</Botao>
-                      <span className="text-xs text-suave">Depende de a Popular Pet indicar o sistema e liberar acesso de leitura.</span>
+      {groups.map((g) => (
+        <section key={g.title} aria-labelledby={`grupo-${g.title}`}>
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 id={`grupo-${g.title}`} className="text-lg font-semibold">{g.title}</h2>
+            <p className="text-sm text-suave">{g.hint}</p>
+          </div>
+          <ul className="grid gap-4 md:grid-cols-2">
+            {g.items.map((src) => {
+              const Icon = src.icon;
+              const expanded = open === src.id;
+              return (
+                <li key={src.id} className={clsx("rounded-[15px] border bg-superficie p-5 transition-colors", expanded ? "border-roxo" : "border-linha")}>
+                  <div className="flex items-start gap-3">
+                    <span className="grid size-11 shrink-0 place-items-center rounded-[12px] bg-roxo-50 text-roxo"><Icon size={20} aria-hidden /></span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="font-medium text-tinta">{src.name}</p>
+                        <span className="rounded-full border border-dashed border-revisar px-2.5 py-0.5 text-xs font-semibold text-revisar">A conectar</span>
+                      </div>
+                      <p className="mt-1 text-sm text-suave">{src.what}</p>
+                      <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-texto">
+                        {src.direction === "read" ? <ArrowDownToLine size={13} aria-hidden /> : <ArrowUpFromLine size={13} aria-hidden />}
+                        {src.direction === "read" ? "Leitura" : "Envio"} · {src.frequency.toLowerCase()} · alimenta {src.rules.charAt(0).toLowerCase() + src.rules.slice(1)}
+                      </p>
                     </div>
                   </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </Card>
-
-      <Card className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <span className="grid size-11 shrink-0 place-items-center rounded-[12px] bg-limao-100 text-limao-700"><FileSpreadsheet size={20} aria-hidden /></span>
-          <div>
-            <p className="font-medium text-tinta">Arquivo de preços aprovados para o ERP</p>
-            <p className="text-sm text-suave">
-              {approved.length
-                ? `${approved.length} ${approved.length === 1 ? "preço aprovado" : "preços aprovados"} (vetados ficam de fora). CSV com ponto e vírgula, pronto para abrir no Excel.`
-                : "Aprove recomendações na fila para gerar o arquivo."}
-            </p>
-          </div>
-        </div>
-        <Botao disabled={!approved.length} onClick={exportCsv}><Download size={16} /> Baixar CSV</Botao>
-      </Card>
+                  <button onClick={() => setOpen(expanded ? null : src.id)} aria-expanded={expanded}
+                    className="mt-3 inline-flex min-h-10 items-center gap-1.5 rounded-[10px] px-2 text-sm font-medium text-roxo hover:bg-roxo-50">
+                    <ChevronDown size={16} className={clsx("transition-transform", expanded && "rotate-180")} aria-hidden />
+                    {expanded ? "Ocultar campos" : `Ver campos (${src.fields.length})`}
+                  </button>
+                  {expanded && (
+                    <div className="mt-2 space-y-3 rounded-[12px] bg-fundo p-4 text-sm">
+                      <ul className="flex flex-wrap gap-1.5">
+                        {src.fields.map((f) => <li key={f} className="rounded-full border border-linha bg-superficie px-2.5 py-0.5 text-xs">{f}</li>)}
+                      </ul>
+                      <p className="text-texto"><span className="text-suave">Hoje, no protótipo:</span> {src.direction === "read" ? `aba ${src.sheet} da base do desafio` : "arquivo CSV baixado nesta tela"}.</p>
+                      {src.id === "competitors" && lastCollection && <p className="text-texto"><span className="text-suave">Coleta mais recente na base:</span> <span className="num">{dataHoraBR(lastCollection)}</span>.</p>}
+                      <p className="flex items-start gap-2 text-suave"><Plug size={15} className="mt-0.5 shrink-0" aria-hidden /> Conectar depende de a Popular Pet indicar o sistema e liberar acesso de leitura.</p>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))}
     </div>
   );
 }

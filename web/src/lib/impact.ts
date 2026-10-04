@@ -61,20 +61,20 @@ export function simulateOutcome(
   r: Recomendacao, schedule: Agendamento, elasticity: Record<string, number>, formula: MarginFormula, appliedAt: string,
 ): Outcome {
   const e = elasticity[r.categoria] ?? ELASTICITY_FALLBACK;
-  const unitsBefore = recentMonthlyUnits(r);
+  const unitsBefore = Math.round(recentMonthlyUnits(r));
   const ratio = schedule.preco / r.preco_atual;
   const unitsExpected = unitsBefore * ratio ** e;
   const aboveMarket = r.preco_mercado != null && schedule.preco / r.preco_mercado - 1 > 0.03 ? 0.92 : 1;
   const unitsAfter = Math.max(0, Math.round(unitsExpected * (1 + 0.1 * noise(schedule.id + r.id)) * aboveMarket));
   const profitBefore = unitsBefore * unitProfit(r, r.preco_atual, formula);
   const profitAfter = unitsAfter * unitProfit(r, schedule.preco, formula);
-  const change = profitBefore !== 0 ? (profitAfter - profitBefore) / Math.abs(profitBefore) : profitAfter > 0 ? 1 : -1;
+  const change = profitBefore !== 0 ? (profitAfter - profitBefore) / Math.abs(profitBefore) : Math.sign(profitAfter);
   const verdict: OutcomeVerdict = change >= VERDICT_THRESHOLD ? "improved" : change <= -VERDICT_THRESHOLD ? "worsened" : "neutral";
   const measured = new Date(new Date(appliedAt).getTime() + MEASUREMENT_DAYS * 86400000).toISOString();
   return {
     id: `${schedule.id}-o`, recId: r.id, scheduleId: schedule.id, origin: schedule.origem,
     oldPrice: r.preco_atual, newPrice: schedule.preco, appliedAt, measuredAt: measured, days: MEASUREMENT_DAYS,
-    unitsBefore, unitsExpected, unitsAfter, profitBefore, profitAfter, verdict, simulated: true,
+    unitsBefore, unitsExpected, unitsAfter, profitBefore, profitAfter, verdict, formula, simulated: true,
   };
 }
 

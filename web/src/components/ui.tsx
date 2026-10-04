@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import { ArrowDown, ArrowUp, CircleAlert, Equal, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { ACAO_ROTULO } from "@/lib/explain";
 import type { Acao, Modo, Risco } from "@/lib/types";
@@ -9,7 +10,7 @@ const ACAO_CLASSE: Record<Acao, string> = {
   MANTER: "bg-manter-bg text-manter",
   REVISAR: "bg-revisar-bg text-revisar",
 };
-const ACAO_SETA: Record<Acao, string> = { SUBIR: "↑", BAIXAR: "↓", MANTER: "=", REVISAR: "!" };
+const ACAO_ICONE: Record<Acao, LucideIcon> = { SUBIR: ArrowUp, BAIXAR: ArrowDown, MANTER: Equal, REVISAR: CircleAlert };
 
 export function AcaoBadge({ acao, grande = false }: { acao: Acao; grande?: boolean }) {
   return (
@@ -20,7 +21,7 @@ export function AcaoBadge({ acao, grande = false }: { acao: Acao; grande?: boole
         ACAO_CLASSE[acao],
       )}
     >
-      <span aria-hidden>{ACAO_SETA[acao]}</span>
+      {(() => { const Icone = ACAO_ICONE[acao]; return <Icone size={grande ? 15 : 13} strokeWidth={2.5} aria-hidden />; })()}
       {ACAO_ROTULO[acao]}
     </span>
   );
@@ -71,31 +72,52 @@ export function Titulo({ eyebrow, children, acao }: { eyebrow?: string; children
   );
 }
 
+export type VarianteBotao = "primario" | "secundario" | "fantasma" | "perigo" | "perigoForte";
+
+/** Classes do botão, para reaproveitar em links com cara de botão. */
+export function botaoClasses(variante: VarianteBotao = "primario", className?: string) {
+  return clsx(
+    "inline-flex h-11 items-center justify-center gap-2 rounded-[10px] px-4 text-sm font-semibold whitespace-nowrap transition-colors active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45 disabled:active:scale-100",
+    variante === "primario" && "bg-roxo text-white hover:bg-roxo-700",
+    variante === "secundario" && "border border-roxo text-roxo hover:bg-roxo-50",
+    variante === "fantasma" && "text-roxo hover:bg-roxo-50",
+    variante === "perigo" && "border border-piso text-piso hover:bg-piso-bg",
+    variante === "perigoForte" && "bg-piso text-white hover:bg-piso/90",
+    className,
+  );
+}
+
 export function Botao({
   children, variante = "primario", className, ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & { variante?: "primario" | "secundario" | "fantasma" | "perigo" }) {
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & { variante?: VarianteBotao }) {
   return (
-    <button
-      {...props}
-      className={clsx(
-        "inline-flex h-11 items-center justify-center gap-2 rounded-[10px] px-4 text-sm font-semibold whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-45",
-        variante === "primario" && "bg-roxo text-white hover:bg-roxo-700",
-        variante === "secundario" && "border border-roxo text-roxo hover:bg-roxo-50",
-        variante === "fantasma" && "text-roxo hover:bg-roxo-50",
-        variante === "perigo" && "border border-piso text-piso hover:bg-piso-bg",
-        className,
-      )}
-    >
+    <button {...props} className={botaoClasses(variante, className)}>
       {children}
     </button>
   );
 }
 
-export function Vazio({ titulo, children }: { titulo: string; children?: ReactNode }) {
+/** Confirmação em linha para ações que apagam ou desfazem (dica #23 do guia). */
+export function Confirmar({ texto, acao, onConfirmar, onCancelar, className }: {
+  texto: ReactNode; acao: string; onConfirmar: () => void; onCancelar: () => void; className?: string;
+}) {
+  return (
+    <div role="alertdialog" aria-label={acao} className={clsx("flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[12px] bg-piso-bg px-4 py-3 text-sm text-piso", className)}>
+      <span className="min-w-0 flex-1">{texto}</span>
+      <span className="flex flex-wrap gap-2">
+        <Botao variante="fantasma" onClick={onCancelar}>Cancelar</Botao>
+        <Botao variante="perigoForte" onClick={onConfirmar} autoFocus>{acao}</Botao>
+      </span>
+    </div>
+  );
+}
+
+export function Vazio({ titulo, children, acao }: { titulo: string; children?: ReactNode; acao?: ReactNode }) {
   return (
     <div className="rounded-[15px] border border-dashed border-linha bg-superficie px-6 py-10 text-center">
       <p className="font-semibold text-tinta">{titulo}</p>
-      {children && <div className="mt-2 text-sm text-suave">{children}</div>}
+      {children && <div className="mx-auto mt-2 max-w-[60ch] text-sm text-suave">{children}</div>}
+      {acao && <div className="mt-4 flex justify-center">{acao}</div>}
     </div>
   );
 }

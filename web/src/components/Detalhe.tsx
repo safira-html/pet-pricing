@@ -6,7 +6,7 @@ import { PainelDecisao } from "./Decisao";
 import { useEffect } from "react";
 import { MapaPreco } from "./PriceRuler";
 import { AcaoBadge, ModoBadge, RiscoBadge, SinteticoTag } from "./ui";
-import { explicar, fraseAlerta, REGRAS } from "@/lib/explain";
+import { explicar, fraseAlerta, rotuloAlerta } from "@/lib/explain";
 import { dataBR, dataHoraBR, inteiro, mesCurto, moeda, pct } from "@/lib/format";
 import { profitChange, verb, VERDICT_LABEL } from "@/lib/impact";
 import { DEFAULT_MARGIN_FORMULA, MARGIN_FORMULAS, marginAt, type MarginFormula } from "@/lib/margin";
@@ -82,8 +82,8 @@ export function Detalhe({ r, onFechar, onAnterior, onProximo, progresso }: {
                   <li key={a.texto} className="flex gap-3 text-sm">
                     {a.tipo === "bloqueio" ? <Ban size={16} className="mt-0.5 shrink-0 text-piso" /> : a.tipo === "aprovacao" ? <AlertTriangle size={16} className="mt-0.5 shrink-0 text-revisar" /> : <Info size={16} className="mt-0.5 shrink-0 text-suave" />}
                     <span>
-                      <span className="font-medium text-tinta">{a.codigo ? `${a.codigo} · ${REGRAS[a.codigo]?.nome ?? ""}` : "Preço mínimo acima do limite de 5%"}</span>
-                      <span className="block text-suave">{fraseAlerta(a)}</span>
+                      <span className="font-medium text-tinta">{rotuloAlerta(a)}</span>
+                      <span className="block text-suave">{fraseAlerta(a, r)}</span>
                     </span>
                   </li>
                 ))}

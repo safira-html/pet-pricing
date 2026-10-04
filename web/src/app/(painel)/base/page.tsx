@@ -1,10 +1,10 @@
 "use client";
 
 import clsx from "clsx";
-import { Database, RotateCcw, Trash2 } from "lucide-react";
+import { Database, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { Botao, Card, SinteticoTag, Titulo } from "@/components/ui";
+import { Botao, Card, Confirmar, SinteticoTag, Titulo } from "@/components/ui";
 import { dataBR } from "@/lib/format";
 import { usePricing } from "@/lib/store";
 import type { Cenario } from "@/lib/types";
@@ -35,6 +35,8 @@ const TRILHA = [
 export default function Base() {
   const p = usePricing();
   const [confirmar, setConfirmar] = useState<Cenario | null>(null);
+  const [recomecando, setRecomecando] = useState(false);
+  const gestor = p.pode("regras");
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -55,19 +57,15 @@ export default function Base() {
                 </div>
                 {ativa && <span className="rounded-full bg-subir-bg px-2.5 py-0.5 text-xs font-semibold text-subir">Em uso</span>}
               </div>
-              {!ativa && (
+              {!ativa && gestor && (
                 confirmar === c ? (
-                  <div className="mt-4 rounded-[10px] bg-revisar-bg p-3 text-sm text-revisar">
-                    Trocar a base apaga as decisões desta sessão.
-                    <div className="mt-2 flex gap-2">
-                      <Botao variante="perigo" onClick={() => { p.trocarCenario(c); setConfirmar(null); }}><Trash2 size={16} /> Trocar base</Botao>
-                      <Botao variante="fantasma" onClick={() => setConfirmar(null)}>Cancelar</Botao>
-                    </div>
-                  </div>
+                  <Confirmar className="mt-4" acao="Trocar base" onCancelar={() => setConfirmar(null)} onConfirmar={() => { p.trocarCenario(c); setConfirmar(null); }}
+                    texto="Trocar a base apaga decisões, regras, exceções, resultados medidos e histórico desta sessão." />
                 ) : (
-                  <Botao variante="secundario" className="mt-4" onClick={() => (p.decisoes.length ? setConfirmar(c) : p.trocarCenario(c))}><Database size={16} /> Usar esta base</Botao>
+                  <Botao variante="secundario" className="mt-4" onClick={() => setConfirmar(c)}><Database size={16} /> Usar esta base</Botao>
                 )
               )}
+              {!ativa && !gestor && <p className="mt-4 text-sm text-suave">Só o gestor troca a base.</p>}
               {c === "sintetico" && (
                 <p className="mt-3 text-xs text-suave">Produtos alterados: {p.base.cenario === "sintetico" ? p.base.skus_sinteticos.join(", ") : "PP-0017, PP-0024, PP-0025, PP-0027, PP-0028, PP-0029, PP-0032, PP-0038, PP-0040"}.</p>
               )}
@@ -77,9 +75,13 @@ export default function Base() {
       </div>
 
       <Card>
-        <Titulo eyebrow="Roteiro para a banca" acao={<Botao variante="secundario" onClick={p.recomecar}><RotateCcw size={16} /> Recomeçar</Botao>}>
+        <Titulo eyebrow="Roteiro para a banca" acao={gestor && !recomecando && <Botao variante="perigo" onClick={() => setRecomecando(true)}><RotateCcw size={16} /> Recomeçar</Botao>}>
           Demonstração em {TRILHA.length} passos
         </Titulo>
+        {recomecando && (
+          <Confirmar className="mb-4" acao="Recomeçar" onCancelar={() => setRecomecando(false)} onConfirmar={() => { p.recomecar(); setRecomecando(false); }}
+            texto="Recomeçar apaga decisões, regras, exceções, resultados medidos e histórico. O perfil, a base e a fórmula de margem continuam." />
+        )}
         <ol className="grid gap-3 md:grid-cols-2">
           {TRILHA.map((t, i) => (
             <li key={t.titulo}>
@@ -93,7 +95,7 @@ export default function Base() {
             </li>
           ))}
         </ol>
-        <p className="mt-4 text-xs text-suave">Recomeçar apaga decisões, modos e histórico desta sessão. O perfil e a base escolhida continuam.</p>
+
       </Card>
     </div>
   );

@@ -88,7 +88,7 @@ export function Select<T extends string>({
         onKeyDown={teclado}
         className={clsx(
           "mt-1.5 flex h-11 w-full items-center justify-between gap-2 rounded-[10px] border bg-superficie px-3 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-          aberto ? "border-roxo ring-2 ring-roxo-100" : "border-linha hover:border-roxo",
+          aberto ? "border-roxo ring-2 ring-roxo-100" : "border-linha-forte hover:border-roxo",
         )}
       >
         <span id={`${id}-valor`} className={clsx("truncate", multiplo && selecionados.length === 0 ? "text-suave" : "text-tinta")}>{texto}</span>

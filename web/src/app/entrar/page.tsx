@@ -53,7 +53,7 @@ export default function Entrar() {
             <h1 className="mt-4 max-w-lg font-display text-[clamp(26px,4.4vh,38px)] leading-[1.12] font-semibold text-white">
               Subir, baixar ou manter: decida cada preço vendo o porquê.
             </h1>
-            <p className="mt-3 max-w-md text-[15px] text-white/80">
+            <p className="mt-3 max-w-md text-base text-white">
               Concorrência, custo, margem, vendas e estoque viram uma recomendação por produto e canal. A decisão final é de quem opera.
             </p>
 
@@ -87,7 +87,7 @@ export default function Entrar() {
                   <span className={clsx("num grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold", i === 0 ? "bg-roxo text-white" : "ring-1 ring-white/50")}>{c.n}</span>
                   <span className="text-sm font-semibold">{c.titulo}</span>
                 </span>
-                <p className={clsx("mt-1.5 text-xs", i === 0 ? "text-suave" : "text-white/75", MUITO_BAIXA)}>{c.texto}</p>
+                <p className={clsx("mt-1.5 text-xs", i === 0 ? "text-suave" : "text-white/90", MUITO_BAIXA)}>{c.texto}</p>
               </li>
             ))}
           </ol>
@@ -96,7 +96,7 @@ export default function Entrar() {
         <section className="flex min-h-0 flex-col overflow-y-auto px-5 py-6 sm:px-10 lg:px-12">
           <Image src="/logo-popular-pet.png" alt="Popular Pet" width={120} height={29} className="mb-6 lg:hidden" />
           <div className="mx-auto my-auto w-full max-w-[420px]">
-            <h2 className="font-display text-[26px] font-semibold">Entrar no Pet Pricing</h2>
+            <h2 className="font-display text-2xl font-semibold">Entrar no Pet Pricing</h2>
             <p className="mt-1 text-sm text-suave">Na demonstração não há senha. Cada visitante trabalha na própria cópia da base.</p>
 
             <fieldset className="mt-5">
@@ -130,7 +130,7 @@ export default function Entrar() {
             <label className="mt-4 block text-sm font-medium text-tinta">
               Seu nome <span className="font-normal text-suave">(aparece no histórico)</span>
               <input value={nome} onChange={(e) => setNome(e.target.value)} onKeyDown={(e) => e.key === "Enter" && entrar()} placeholder="Ex.: Safira"
-                className="mt-1.5 h-11 w-full rounded-[12px] border border-transparent bg-fundo px-4 text-sm outline-none transition-colors placeholder:text-suave/70 focus:border-roxo focus:bg-superficie" />
+                className="mt-1.5 h-11 w-full rounded-[12px] border border-linha-forte bg-superficie px-4 text-sm outline-none transition-colors placeholder:text-suave focus:border-roxo" />
             </label>
 
             <button onClick={entrar} className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-[12px] bg-roxo text-sm font-semibold text-white shadow-[0_8px_20px_rgba(118,78,160,0.35)] transition-all hover:bg-roxo-700 active:scale-[0.99]">

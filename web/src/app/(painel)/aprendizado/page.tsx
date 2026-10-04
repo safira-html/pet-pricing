@@ -35,7 +35,7 @@ export default function ImpactAndLearning() {
     <div className="mx-auto max-w-6xl space-y-6">
       <header>
         <h1 className="text-2xl font-semibold">Impacto e aprendizado</h1>
-        <p className="max-w-3xl text-sm text-suave">
+        <p className="max-w-[68ch] text-sm text-suave">
           Cada mudança aplicada é medida {MEASUREMENT_DAYS} dias depois. O resultado, somado às decisões das pessoas, vira aprendizado por categoria e canal, e o aprendizado pode tirar um grupo do piloto automático.
         </p>
       </header>
@@ -89,7 +89,7 @@ function ImpactTab() {
             {ran != null && <p className="mt-1 text-sm font-medium text-subir">{ran} {ran === 1 ? "mudança medida" : "mudanças medidas"}. Os resultados estão abaixo.</p>}
           </div>
         </div>
-        {p.pode("decidir") && (
+        {p.pode("pilotar") && (
           <Botao disabled={!pending.length} onClick={() => setRan(p.simulateMeasurement())}>
             <CalendarClock size={16} /> Simular {MEASUREMENT_DAYS} dias
           </Botao>
@@ -97,7 +97,7 @@ function ImpactTab() {
       </Card>
 
       <Card>
-        <Titulo eyebrow="Carteira inteira, com as decisões tomadas">Antes e depois</Titulo>
+        <Titulo eyebrow="Carteira inteira">Antes e depois das decisões</Titulo>
         <div className="grid gap-3 sm:grid-cols-3">
           {[
             { label: "Itens na faixa competitiva (±2% do mercado)", before: pct(m.faixaHoje, 0), after: pct(m.faixaDepois, 0) },
@@ -222,7 +222,7 @@ function LearningsTab() {
     <div className="space-y-6">
       <Card>
         <Titulo eyebrow="Por categoria e canal">O que o sistema aprendeu</Titulo>
-        <p className="max-w-3xl text-sm text-texto">
+        <p className="max-w-[68ch] text-sm text-texto">
           Um grupo sai do piloto automático quando metade ou mais das mudanças medidas piorou a contribuição (mínimo de 2) ou quando os analistas rejeitaram metade ou mais das recomendações (mínimo de 3). Colocar um grupo no piloto continua sendo decisão do gestor.
         </p>
         {active.length === 0 ? (
@@ -324,7 +324,7 @@ function LearningCard({ l }: { l: SegmentLearning }) {
             <div className="flex flex-wrap items-end gap-2">
               <label className="min-w-56 flex-1 text-sm font-medium text-tinta">Motivo
                 <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Ex.: Queda causada por ruptura de estoque"
-                  className="mt-1.5 h-11 w-full rounded-[10px] border border-linha bg-superficie px-3 text-sm outline-none focus:border-roxo" />
+                  className="mt-1.5 h-11 w-full rounded-[10px] border border-linha-forte bg-superficie px-3 text-sm outline-none focus:border-roxo" />
               </label>
               <Botao variante="fantasma" onClick={() => setAsking(false)}>Cancelar</Botao>
               <Botao disabled={reason.trim().length < 5} onClick={() => { p.dismissLearning(l.key, reason.trim()); setAsking(false); }}><Check size={16} /> Confirmar</Botao>
@@ -353,7 +353,7 @@ function HistoryTab() {
       <div className="mb-4 flex flex-wrap gap-1.5">
         {EVENT_TYPES.map((t) => (
           <button key={t} onClick={() => setFilter(filter === t ? null : t)} aria-pressed={filter === t}
-            className={clsx("h-9 rounded-full border px-3 text-xs capitalize", filter === t ? "border-roxo bg-roxo-50 font-semibold text-roxo" : "border-linha hover:border-roxo")}>
+            className={clsx("min-h-10 rounded-full border px-3.5 text-sm capitalize", filter === t ? "border-roxo bg-roxo-50 font-semibold text-roxo" : "border-linha hover:border-roxo")}>
             {t}
           </button>
         ))}
@@ -365,7 +365,7 @@ function HistoryTab() {
           {events.map((e) => (
             <li key={e.id} className="relative text-sm">
               <span className={clsx("absolute top-1.5 -left-[27px] size-3 rounded-full ring-4 ring-superficie",
-                e.tipo === "veto" ? "bg-piso" : e.tipo === "piloto automático" ? "bg-roxo" : e.tipo === "decisão" ? "bg-limao" : e.tipo === "impacto" ? "bg-baixar" : "bg-linha")} aria-hidden />
+                e.tipo === "veto" ? "bg-piso" : e.tipo === "piloto automático" ? "bg-roxo" : e.tipo === "decisão" ? "bg-limao" : e.tipo === "impacto" ? "bg-baixar" : "bg-linha-forte")} aria-hidden />
               <p><strong className="text-tinta">{e.autor}</strong> {e.texto}</p>
               <p className="text-xs text-suave">{dataHoraBR(e.quando)} · {e.tipo}{e.recId && <> · <Link href={`/fila?item=${encodeURIComponent(e.recId)}`} className="text-roxo underline">abrir item</Link></>}</p>
             </li>

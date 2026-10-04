@@ -10,12 +10,14 @@
   --roxo-100: #ece4f5;
   --roxo-50: #f6f2fa;
   --limao: #a6ce39;
-  --limao-700: #5d7a12;
+  --limao-700: #4f6a0c;
   --limao-100: #edf6d4;
   --tinta: #2b2533;
   --texto: #444444;
   --suave: #6e6878;
   --linha: #e4dfea;
+  /* borda de campos e controles: 3,46:1 sobre branco (WCAG 1.4.11) */
+  --linha-forte: #8e8799;
   --fundo: #f7f5fa;
   --superficie: #ffffff;
   --subir: #4f7a0f;
@@ -44,6 +46,7 @@
   --color-texto: var(--texto);
   --color-suave: var(--suave);
   --color-linha: var(--linha);
+  --color-linha-forte: var(--linha-forte);
   --color-fundo: var(--fundo);
   --color-superficie: var(--superficie);
   --color-subir: var(--subir);
@@ -93,6 +96,12 @@
   :focus-visible {
     outline: 2px solid var(--roxo);
     outline-offset: 2px;
+  }
+
+  /* Campos usam outline-none: o foco aparece como anel lilás. */
+  input:focus-visible,
+  textarea:focus-visible {
+    box-shadow: 0 0 0 3px var(--roxo-100);
   }
 }
 

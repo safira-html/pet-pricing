@@ -1,11 +1,11 @@
 "use client";
 
 import clsx from "clsx";
-import { CalendarClock, Lock, Plus, Trash2, Undo2, XCircle } from "lucide-react";
+import { CalendarClock, CirclePause, Lock, Plus, Trash2, Undo2, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Select } from "@/components/Select";
-import { AcaoBadge, Botao, Card, SinteticoTag, Titulo, Vazio } from "@/components/ui";
+import { AcaoBadge, Botao, Card, Confirmar, SinteticoTag, Titulo, Vazio } from "@/components/ui";
 import { moeda, pct } from "@/lib/format";
 import { cobre, descreverRegra, usePricing } from "@/lib/store";
 import type { Canal, Recomendacao, RegraPiloto } from "@/lib/types";
@@ -32,6 +32,9 @@ export default function Pilotagem() {
   const p = usePricing();
   const agora = useAgora();
   const gestor = p.pode("pilotar");
+  const [removendo, setRemovendo] = useState<string | null>(null);
+  const [limpando, setLimpando] = useState(false);
+  const holds = p.learnings.filter((l) => l.effect === "hold" && !l.dismissed);
   const [msg, setMsg] = useState<string | null>(null);
   const [nova, setNova] = useState<Pick<RegraPiloto, "curva" | "canal" | "categoria">>({ curva: null, canal: null, categoria: null });
 
@@ -51,13 +54,13 @@ export default function Pilotagem() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <header className="max-w-3xl">
+      <header className="max-w-[68ch]">
         <h1 className="text-2xl font-semibold">Pilotagem</h1>
         <p className="mt-1 text-sm leading-relaxed text-suave text-pretty">
           Todo item começa em <strong className="text-tinta">copiloto</strong>: o sistema recomenda e uma pessoa decide. Com regras de grupo, você coloca itens em <strong className="text-tinta">piloto automático</strong>: as recomendações que passam pelas proteções são agendadas sozinhas, com tempo para veto. Nada vai para o ERP, a aplicação é simulada.
         </p>
         {!gestor && (
-          <p className="mt-3 inline-flex items-center gap-2 rounded-[10px] bg-roxo-50 px-3 py-2 text-sm text-roxo-800"><Lock size={16} /> Só o gestor comercial muda a pilotagem. Você pode ver tudo e vetar mudanças agendadas.</p>
+          <p className="mt-3 inline-flex items-center gap-2 rounded-[10px] bg-roxo-50 px-3 py-2 text-sm text-roxo-800"><Lock size={16} /> Só o gestor comercial muda a pilotagem. {p.pode("vetar") ? "Você pode ver tudo e vetar mudanças agendadas." : "Você pode ver tudo, sem alterar."}</p>
         )}
       </header>
 
@@ -71,7 +74,7 @@ export default function Pilotagem() {
             </div>
             <button role="switch" aria-checked={p.piloto.ligado} aria-label="Ligar piloto automático" disabled={!gestor}
               onClick={() => p.configurarPiloto({ ligado: !p.piloto.ligado })}
-              className={clsx("relative h-8 w-14 shrink-0 rounded-full transition-colors disabled:opacity-45", p.piloto.ligado ? "bg-subir" : "bg-linha")}>
+              className={clsx("relative h-8 w-14 shrink-0 rounded-full transition-colors disabled:opacity-45", p.piloto.ligado ? "bg-subir" : "bg-linha-forte")}>
               <span className={clsx("absolute top-1 size-6 rounded-full bg-white shadow transition-all", p.piloto.ligado ? "left-7" : "left-1")} />
             </button>
           </div>
@@ -89,7 +92,8 @@ export default function Pilotagem() {
               <li>a recomendação é subir ou baixar;</li>
               <li>nenhuma regra da base bloqueia ou pede aprovação;</li>
               <li>a variação cabe no limite acima;</li>
-              <li>o produto não é estratégico.</li>
+              <li>o produto não é estratégico;</li>
+              <li>o aprendizado não tirou o grupo do piloto.</li>
             </ul>
           </div>
         </Card>
@@ -109,8 +113,18 @@ export default function Pilotagem() {
               <strong className="text-tinta">{descreverRegra(nova)}</strong>
               <span className="block text-suave">{cobertosNova.length} {cobertosNova.length === 1 ? "item" : "itens"} · {elegNova.length} {elegNova.length === 1 ? "passa" : "passam"} pelas proteções hoje</span>
             </p>
-            <Botao disabled={!gestor || !cobertosNova.length} onClick={() => p.adicionarRegraPiloto(nova)}><Plus size={16} /> Criar regra</Botao>
+            <Botao variante="secundario" disabled={!gestor || !cobertosNova.length} onClick={() => p.adicionarRegraPiloto(nova)}><Plus size={16} /> Criar regra</Botao>
           </div>
+
+          {holds.length > 0 && (
+            <p className="mt-4 flex items-start gap-2 rounded-[10px] bg-piso-bg px-3 py-2.5 text-sm text-piso">
+              <CirclePause size={16} className="mt-0.5 shrink-0" aria-hidden />
+              <span>
+                O aprendizado tirou do piloto: {holds.map((l) => `${l.categoria} · ${l.canal}`).join(", ")}.{" "}
+                <Link href="/aprendizado" className="font-semibold underline">Ver por quê</Link>
+              </span>
+            </p>
+          )}
 
           <h3 className="mt-6 text-sm font-semibold">Regras ativas</h3>
           {p.regrasPiloto.length === 0 ? (
@@ -121,28 +135,36 @@ export default function Pilotagem() {
                 const cob = p.recs.filter((r) => cobre(g, r));
                 const ok = cob.filter((r) => p.eligibility(r).elegivel).length;
                 return (
-                  <li key={g.id} className="flex items-center justify-between gap-3 py-2.5">
+                  <li key={g.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5">
                     <span className="text-sm"><span className="font-medium text-tinta">{descreverRegra(g)}</span>
                       <span className="block text-suave">{cob.length} {cob.length === 1 ? "item" : "itens"} · {ok} {ok === 1 ? "passa" : "passam"} pelas proteções</span></span>
-                    <button disabled={!gestor} onClick={() => p.removerRegraPiloto(g.id)} aria-label={`Remover regra ${descreverRegra(g)}`}
-                      className="grid size-11 place-items-center rounded-[10px] text-piso hover:bg-piso-bg disabled:opacity-40"><Trash2 size={18} /></button>
+                    {removendo === g.id ? (
+                      <Confirmar texto="Remover a regra? Os itens voltam ao copiloto." acao="Remover" onCancelar={() => setRemovendo(null)}
+                        onConfirmar={() => { p.removerRegraPiloto(g.id); setRemovendo(null); }} className="w-full" />
+                    ) : (
+                      <button disabled={!gestor} onClick={() => setRemovendo(g.id)} aria-label={`Remover regra ${descreverRegra(g)}`}
+                        className="grid size-11 shrink-0 place-items-center rounded-[10px] text-piso hover:bg-piso-bg disabled:opacity-40"><Trash2 size={18} /></button>
+                    )}
                   </li>
                 );
               })}
             </ul>
           )}
-          {excecoes.length > 0 && (
+          {excecoes.length > 0 && (limpando ? (
+            <Confirmar className="mt-4" texto={`Apagar ${excecoes.length === 1 ? "a exceção manual" : `as ${excecoes.length} exceções manuais`}? ${excecoes.length === 1 ? "O item volta" : "Os itens voltam"} a seguir as regras de grupo.`}
+              acao="Apagar exceções" onCancelar={() => setLimpando(false)} onConfirmar={() => { p.limparExcecao(excecoes.map((r) => r.id)); setLimpando(false); }} />
+          ) : (
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[12px] border border-dashed border-linha px-4 py-3 text-sm">
-              <span>{excecoes.length} {excecoes.length === 1 ? "item tem" : "itens têm"} exceção manual e ignoram as regras.</span>
-              <Botao variante="secundario" disabled={!gestor} onClick={() => p.limparExcecao(excecoes.map((r) => r.id))}><Undo2 size={16} /> Voltar às regras</Botao>
+              <span>{excecoes.length} {excecoes.length === 1 ? "item tem exceção manual e ignora" : "itens têm exceção manual e ignoram"} as regras.</span>
+              <Botao variante="secundario" disabled={!gestor} onClick={() => setLimpando(true)}><Undo2 size={16} /> Voltar às regras</Botao>
             </div>
-          )}
+          ))}
         </Card>
       </div>
 
       <Card>
         <Titulo eyebrow="Prévia" acao={
-          <Botao disabled={!gestor || !p.piloto.ligado || !previa.length} onClick={() => { const n = p.rodarPiloto(); setMsg(n ? `${n} mudanças agendadas. Elas estão na fila de veto abaixo.` : null); }}>
+          <Botao disabled={!gestor || !p.piloto.ligado || !previa.length} onClick={() => { const n = p.rodarPiloto(); setMsg(n ? `${n} ${n === 1 ? "mudança agendada. Ela está" : "mudanças agendadas. Elas estão"} na fila de veto abaixo.` : null); }}>
             <CalendarClock size={16} /> Agendar mudanças
           </Botao>
         }>
@@ -176,7 +198,9 @@ export default function Pilotagem() {
       <Card>
         <Titulo eyebrow="Fila de veto">Mudanças automáticas aguardando</Titulo>
         {veto.length === 0 ? (
-          <p className="text-sm text-suave">Quando o piloto automático agendar uma mudança, ela aparece aqui com contagem regressiva. Qualquer analista pode vetar.</p>
+          <Vazio titulo="Nenhuma mudança aguardando veto">
+            Quando o piloto automático agendar uma mudança, ela aparece aqui com contagem regressiva e qualquer analista pode vetar. Para agendar, ligue o piloto, crie uma regra de grupo e use “Agendar mudanças” na prévia.
+          </Vazio>
         ) : (
           <ul className="divide-y divide-linha text-sm">
             {veto.map((a) => {
@@ -201,6 +225,7 @@ export default function Pilotagem() {
       <Card>
         <Titulo eyebrow="Item por item">Modo de cada produto em cada canal</Titulo>
         <p className="mb-4 text-sm text-suave">Clique para criar uma exceção a um item. A bolinha verde indica que ele passaria pelas proteções hoje.</p>
+        <div className="relative">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-sm">
             <thead className="text-left text-sm text-suave">
@@ -228,7 +253,8 @@ export default function Pilotagem() {
                           <span className="text-left leading-tight">{auto ? "Piloto automático" : "Copiloto"}
                             {origem !== "padrão" && <span className="block text-xs font-normal text-suave">{origem === "regra" ? "pela regra" : "exceção"}</span>}
                           </span>
-                          <span className={clsx("size-2.5 shrink-0 rounded-full", e.elegivel ? "bg-subir" : "border border-current opacity-50")} aria-label={e.elegivel ? "passa pelas proteções" : "não passa pelas proteções"} />
+                          <span className={clsx("size-2.5 shrink-0 rounded-full", e.elegivel ? "bg-subir" : "border border-linha-forte")} aria-hidden />
+                          <span className="sr-only">{e.elegivel ? "passa pelas proteções" : "não passa pelas proteções"}</span>
                         </button>
                       </td>
                     );
@@ -237,6 +263,9 @@ export default function Pilotagem() {
               ))}
             </tbody>
           </table>
+        </div>
+          {/* dica #73: no celular a tabela rola de lado; o degradê indica que há mais */}
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-superficie md:hidden" aria-hidden />
         </div>
       </Card>
       <p className="text-sm text-suave">Regras, exceções e vetos ficam registrados em <Link href="/aprendizado" className="text-roxo underline">Aprendizado</Link>.</p>

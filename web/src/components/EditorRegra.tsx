@@ -5,7 +5,7 @@ import { Save, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Select } from "./Select";
 import { AcaoBadge, Botao } from "./ui";
-import { moeda, pct } from "@/lib/format";
+import { dataBR, moeda, pct } from "@/lib/format";
 import { recalculateAll } from "@/lib/recalcular";
 import { usePricing } from "@/lib/store";
 import type { Escopo, RegraPreco } from "@/lib/types";
@@ -42,7 +42,12 @@ export function EditorRegra({ inicial, onFechar }: { inicial?: RegraPreco; onFec
       inicio: ref, fim: null, prioridade: 3, exigeAprovacao: false, ativa: true, justificativa: "",
     },
   );
-  const [duracao, setDuracao] = useState(inicial?.fim ? "30" : "0");
+  // A duração vem do início e do fim salvos, para editar não mudar a data de fim sem querer.
+  const [duracao, setDuracao] = useState(() => {
+    if (!inicial?.fim) return "0";
+    const dias = Math.round((new Date(`${inicial.fim}T12:00:00`).getTime() - new Date(`${inicial.inicio.slice(0, 10)}T12:00:00`).getTime()) / 86400000);
+    return DURACAO.some((d) => d.valor === String(dias)) ? String(dias) : "manter";
+  });
 
   const opcoesValor = useMemo(() => {
     const campo = (r: (typeof p.recs)[number]) => ({ todos: "", curva: r.curva, categoria: r.categoria, marca: r.marca, canal: r.canal, sku: r.sku })[g.escopo];
@@ -53,6 +58,13 @@ export function EditorRegra({ inicial, onFechar }: { inicial?: RegraPreco; onFec
     }));
   }, [g.escopo, p.base.recomendacoes]);
 
+  // Maior taxa de canal entre os itens cobertos: limita a margem possível (preço = custo ÷ (1 − taxa − margem)).
+  const taxaMax = useMemo(() => {
+    const cobertos = p.base.recomendacoes.filter((r) => g.escopo === "todos" || g.valores.includes({ todos: "", curva: r.curva, categoria: r.categoria, marca: r.marca, canal: r.canal, sku: r.sku }[g.escopo]));
+    if (!cobertos.length) return null;
+    return p.marginFormula === "gross" ? 0 : Math.max(...cobertos.map((r) => r.custo.taxa_canal));
+  }, [g, p.base.recomendacoes, p.marginFormula]);
+
   const minBase = useMemo(() => {
     const cobertos = p.base.recomendacoes.filter((r) => g.escopo === "todos" || g.valores.includes({ todos: "", curva: r.curva, categoria: r.categoria, marca: r.marca, canal: r.canal, sku: r.sku }[g.escopo]));
     return cobertos.length ? Math.max(...cobertos.map((r) => r.margem.minima)) : null;
@@ -62,11 +74,16 @@ export function EditorRegra({ inicial, onFechar }: { inicial?: RegraPreco; onFec
   if (!g.nome.trim()) erros.push("Dê um nome à regra.");
   if (g.escopo !== "todos" && !g.valores.length) erros.push("Escolha a quem a regra se aplica.");
   if (g.margemAlvo < g.margemMinima) erros.push("A margem alvo precisa ser igual ou maior que a mínima.");
-  if (g.margemMinima >= 0.9 || g.margemAlvo >= 0.9) erros.push("Margem acima de 90% torna o cálculo impossível.");
+  if (taxaMax != null && Math.max(g.margemMinima, g.margemAlvo) >= 1 - taxaMax - 0.01)
+    erros.push(`Com a taxa de canal de ${pct(taxaMax, 0)}, a margem precisa ficar abaixo de ${pct(1 - taxaMax - 0.01, 0)}.`);
+  if (g.subidaMax < 0.005) erros.push("A subida máxima precisa ser de pelo menos 0,5%.");
   if (g.justificativa.trim().length < 5) erros.push("Escreva o motivo da regra.");
 
   // Prévia: compara as recomendações atuais com as que existiriam com esta regra.
-  const regraFinal: RegraPreco = { ...g, id: g.id ?? "previa", autor: "", atualizadaEm: "", fim: duracao === "0" ? null : somarDias(g.inicio, Number(duracao)) };
+  const regraFinal: RegraPreco = {
+    ...g, id: g.id ?? "previa", autor: "", atualizadaEm: "",
+    fim: duracao === "manter" ? inicial?.fim ?? null : duracao === "0" ? null : somarDias(g.inicio, Number(duracao)),
+  };
   const chaveRegra = JSON.stringify(regraFinal);
   const previa = useMemo(() => {
     if (erros.length && !(erros.length === 1 && erros[0].startsWith("Escreva o motivo"))) return null;
@@ -113,7 +130,7 @@ export function EditorRegra({ inicial, onFechar }: { inicial?: RegraPreco; onFec
           <section className="space-y-4 rounded-[15px] border border-linha bg-superficie p-5">
             <label className="block text-sm font-medium text-tinta">Nome da regra
               <input value={g.nome} onChange={(e) => setG({ ...g, nome: e.target.value })} placeholder="Ex.: Proteger margem da curva A"
-                className="mt-1.5 h-11 w-full rounded-[10px] border border-linha px-3 text-sm outline-none focus:border-roxo" />
+                className="mt-1.5 h-11 w-full rounded-[10px] border border-linha-forte px-3 text-sm outline-none focus:border-roxo" />
             </label>
             <div className="grid gap-4 sm:grid-cols-2">
               <Select rotulo="Aplicar a" valor={g.escopo} opcoes={ESCOPOS} onChange={(v) => setG({ ...g, escopo: v as Escopo, valores: [] })} />
@@ -131,7 +148,8 @@ export function EditorRegra({ inicial, onFechar }: { inicial?: RegraPreco; onFec
           </section>
 
           <section className="grid gap-4 rounded-[15px] border border-linha bg-superficie p-5 sm:grid-cols-2">
-            <Select rotulo="Duração" valor={duracao} opcoes={DURACAO} onChange={(v) => setDuracao(v as string)} />
+            <Select rotulo="Duração" valor={duracao} onChange={(v) => setDuracao(v as string)}
+              opcoes={duracao === "manter" && inicial?.fim ? [{ valor: "manter", rotulo: `Até ${dataBR(inicial.fim)} (como está)` }, ...DURACAO] : DURACAO} />
             <Select rotulo="Prioridade" valor={String(g.prioridade)} onChange={(v) => setG({ ...g, prioridade: Number(v) })}
               opcoes={[1, 2, 3, 4, 5].map((n) => ({ valor: String(n), rotulo: `${n}${n === 1 ? " · baixa" : n === 5 ? " · alta" : ""}`, detalhe: n === 5 ? "Vence outras regras do mesmo nível" : undefined }))} />
             <div className="flex items-center justify-between gap-4 sm:col-span-2">
@@ -140,13 +158,13 @@ export function EditorRegra({ inicial, onFechar }: { inicial?: RegraPreco; onFec
                 <span className="text-xs text-suave">Os itens cobertos nunca vão sozinhos pelo piloto automático.</span>
               </span>
               <button role="switch" aria-checked={g.exigeAprovacao} aria-label="Exigir aprovação" onClick={() => setG({ ...g, exigeAprovacao: !g.exigeAprovacao })}
-                className={clsx("relative h-8 w-14 shrink-0 rounded-full transition-colors", g.exigeAprovacao ? "bg-subir" : "bg-linha")}>
+                className={clsx("relative h-8 w-14 shrink-0 rounded-full transition-colors", g.exigeAprovacao ? "bg-subir" : "bg-linha-forte")}>
                 <span className={clsx("absolute top-1 size-6 rounded-full bg-white shadow transition-all", g.exigeAprovacao ? "left-7" : "left-1")} />
               </button>
             </div>
             <label className="block text-sm font-medium text-tinta sm:col-span-2">Motivo <span className="font-normal text-suave">(fica no histórico)</span>
               <input value={g.justificativa} onChange={(e) => setG({ ...g, justificativa: e.target.value })} placeholder="Ex.: Categoria com ruptura frequente; preservar margem"
-                className="mt-1.5 h-11 w-full rounded-[10px] border border-linha px-3 text-sm outline-none focus:border-roxo" />
+                className="mt-1.5 h-11 w-full rounded-[10px] border border-linha-forte px-3 text-sm outline-none focus:border-roxo" />
             </label>
           </section>
 

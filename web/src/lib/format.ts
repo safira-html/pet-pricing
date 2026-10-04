@@ -18,7 +18,8 @@ export function pp(v: number | null | undefined) {
 
 export function dataBR(iso: string | null | undefined) {
   if (!iso) return "—";
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  // Só data pura (AAAA-MM-DD) é lida sem fuso; data com hora segue o fuso local.
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
   if (m) return `${m[3]}/${m[2]}/${m[1]}`;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;

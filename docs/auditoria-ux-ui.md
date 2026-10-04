@@ -66,3 +66,46 @@ Agora o gestor monta regras combinando curva, canal e categoria. Exemplos: "Todo
   - ciclo do produto em 3 passos;
   - perfis como cartões com ícone e campo preenchido;
   - login corporativo indicado como caminho de produção.
+
+## Auditoria completa de 04/10 (telas, componentes e funções)
+
+Dois revisores independentes (lógica e acessibilidade/guia) e revisão visual tela a tela, no desktop e a 375 px.
+
+**Lógica corrigida:**
+- **Veto:** um item vetado não volta para a prévia do piloto no mesmo ciclo.
+- **Item já aplicado:** não pode ser decidido de novo no mesmo ciclo. Antes, isso duplicava o impacto medido.
+- **Manter:** aprovar "manter" registra a decisão, mas não agenda mudança nem entra no CSV.
+- **Desfazer:**
+  - restaura a decisão anterior;
+  - a aprovação em lote vira um aviso só, que desfaz tudo;
+  - o aviso dura 12 s e pausa com o mouse em cima.
+- **Mudanças pendentes do piloto:** as que estão em janela de veto são canceladas, com registro, quando mudam a fórmula, as regras, os parâmetros, os produtos estratégicos ou as proteções.
+- **Permissões:**
+  - trocar base, recomeçar e simular 30 dias passaram a ser só do gestor, com confirmação;
+  - o CSV só leva preços fora da janela de veto.
+- **Regras e textos:**
+  - editar uma regra mantém a data de fim;
+  - a validação impede margem que torna o preço impossível com a taxa do canal;
+  - textos com "5%", "3%" e "3 dias" fixos agora seguem os parâmetros;
+  - regras do gestor aparecem com o nome certo nos alertas;
+  - data com hora usa o fuso local;
+  - o resultado sem contribuição antes e depois conta como estável.
+
+**Interface corrigida (números das dicas do guia):**
+- **Contraste (#17, WCAG 1.4.3 e 1.4.11):**
+  - saiu a opacidade sobre texto;
+  - `limao-700` escurecido;
+  - nova borda `linha-forte` (3,46:1) em campos e chaves;
+  - anel de foco visível nos campos.
+- **Ações destrutivas (#23):** confirmação em linha padronizada, com botão vermelho cheio.
+- **Áreas de toque (#31, #59):** filtros, chips de motivo, caixas de seleção e botões do aviso com 36 a 44 px.
+- **Hierarquia (#29, #37):** a recomendação principal aparece cheia no painel de decisão; "Criar regra" virou secundário.
+- **Significado só por cor (#20):** os alertas agrupados ganharam ícones, e as setas dos selos viraram ícones da mesma biblioteca (#56).
+- **Leitura (#12):** parágrafos limitados a cerca de 68 caracteres por linha.
+- **Estados vazios (#74):** com ação ("Limpar filtros", passos para agendar).
+- **Celular:**
+  - linha da fila reorganizada;
+  - botão de sair visível;
+  - tabela da pilotagem com indicação de rolagem (#73).
+- **Menu lateral:** menos caixas (ícone sem fundo, barra no item ativo) e rodapé compacto com iniciais, base e aviso acadêmico.
+- **Integrações:** exportação no topo, passos em linha e fontes em cartões agrupados por sistema.

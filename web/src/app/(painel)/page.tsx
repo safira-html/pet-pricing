@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { AlertTriangle, ArrowRight, Ban, Info } from "lucide-react";
 import { Movimento } from "@/components/PriceRuler";
 import { AcaoBadge, Card, SinteticoTag, Titulo } from "@/components/ui";
-import { ACAO_ROTULO, REGRAS, resumoCurto } from "@/lib/explain";
+import { ACAO_ROTULO, resumoCurto, rotuloAlerta } from "@/lib/explain";
 import { dataBR, inteiro, pct, pp } from "@/lib/format";
 import { FAIXA_COMPETITIVA, metricas } from "@/lib/metricas";
 import { usePricing } from "@/lib/store";
@@ -28,8 +28,8 @@ export default function VisaoGeral() {
   const grupos = new Map<string, { texto: string; tipo: string; n: number }>();
   p.recs.forEach((r) =>
     r.alertas.forEach((a) => {
-      const chave = a.codigo ?? (a.texto.startsWith("Piso") ? "PISO" : a.texto.slice(0, 20));
-      const g = grupos.get(chave) ?? { texto: a.codigo ? `${a.codigo} · ${REGRAS[a.codigo]?.nome ?? ""}` : "Preço mínimo acima do limite de 5%", tipo: a.tipo, n: 0 };
+      const chave = a.codigo ?? (a.texto.startsWith("Piso") ? "PISO" : a.texto);
+      const g = grupos.get(chave) ?? { texto: a.texto.startsWith("Regra “") ? a.texto.replace(/ exige aprovação\.$/, "") : rotuloAlerta(a), tipo: a.tipo, n: 0 };
       g.n++;
       grupos.set(chave, g);
     }),
@@ -47,21 +47,24 @@ export default function VisaoGeral() {
             {pendentes.length} preços para decidir
           </h1>
         </div>
-        <Link href="/fila" className="inline-flex items-center gap-2 rounded-[10px] bg-roxo px-4 py-2.5 text-sm font-semibold text-white hover:bg-roxo-700">
+        <Link href="/fila" className="inline-flex h-11 items-center gap-2 rounded-[10px] bg-roxo px-4 text-sm font-semibold text-white hover:bg-roxo-700">
           Abrir a fila <ArrowRight size={16} />
         </Link>
       </header>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
         {ACOES.map((a) => (
-          <Link key={a} href={`/fila?acao=${a}`} className="rounded-[15px] border border-linha bg-superficie p-4 hover:border-roxo">
-            <AcaoBadge acao={a} />
+          <Link key={a} href={`/fila?acao=${a}`} className="group rounded-[15px] border border-linha bg-superficie p-4 transition-all hover:border-roxo hover:shadow-[0_6px_18px_rgba(61,35,88,0.08)] active:scale-[0.99]">
+            <span className="flex items-center justify-between">
+              <AcaoBadge acao={a} />
+              <ArrowRight size={16} className="text-suave transition-transform group-hover:translate-x-0.5 group-hover:text-roxo" aria-hidden />
+            </span>
             <p className="num mt-3 font-display text-3xl font-semibold text-tinta">{total[a]}</p>
             <p className="text-xs text-suave">
               {a === "SUBIR" && "recompõem margem ou acompanham o mercado"}
               {a === "BAIXAR" && "ganham competitividade com margem folgada"}
               {a === "MANTER" && "já estão no ponto de equilíbrio"}
-              {a === "REVISAR" && `${semPreco} sem preço possível dentro de 5%`}
+              {a === "REVISAR" && `${semPreco} sem preço possível dentro de ${pct(p.parametros.R02, 0)}`}
             </p>
           </Link>
         ))}
@@ -92,7 +95,7 @@ export default function VisaoGeral() {
           </div>
           {comRampa > 0 && (
             <p className="mt-5 rounded-[10px] bg-revisar-bg p-3 text-sm text-revisar">
-              <strong>{comRampa} casos</strong> precisariam subir mais de 5% para chegar à margem mínima. A proposta da V2 é reajustar em etapas, com aprovação.{" "}
+              <strong>{comRampa} {comRampa === 1 ? "caso precisaria" : "casos precisariam"}</strong> subir mais de {pct(p.parametros.R02, 0)} para chegar à margem mínima. A proposta da V2 é reajustar em etapas, com aprovação.{" "}
               <Link href="/regras#rampa" className="font-semibold underline">Ver proposta</Link>
             </p>
           )}
@@ -103,7 +106,7 @@ export default function VisaoGeral() {
           <dl className="space-y-4 text-sm">
             <Metrica rotulo={`Na faixa competitiva (até ${pct(FAIXA_COMPETITIVA, 0)} do mercado)`} hoje={pct(m.faixaHoje, 0)} depois={pct(m.faixaDepois, 0)} delta={pp(m.faixaDepois - m.faixaHoje)} />
             <Metrica rotulo={p.marginFormula === "contribution" ? "Margem média de contribuição" : "Margem bruta média"} hoje={pct(m.margemHoje)} depois={pct(m.margemDepois)} delta={pp(m.margemDepois - m.margemHoje)} />
-            <Metrica rotulo="Itens abaixo do preço mínimo" hoje={inteiro(m.abaixoPisoHoje)} depois={inteiro(m.abaixoPisoDepois)} />
+            <Metrica rotulo="Itens abaixo do preço mínimo" hoje={inteiro(m.abaixoPisoHoje)} depois={inteiro(m.abaixoPisoDepois)} delta={m.abaixoPisoDepois !== m.abaixoPisoHoje ? `${m.abaixoPisoDepois > m.abaixoPisoHoje ? "+" : "−"}${Math.abs(m.abaixoPisoDepois - m.abaixoPisoHoje)}` : undefined} />
             <div className="grid grid-cols-2 gap-3 border-t border-linha pt-4">
               <div>
                 <dt className="text-xs text-suave">Aceitação das recomendações</dt>
@@ -127,7 +130,7 @@ export default function VisaoGeral() {
           <ul className="divide-y divide-linha">
             {proximas.map((r) => (
               <li key={r.id}>
-                <Link href={`/fila?item=${encodeURIComponent(r.id)}`} className="flex items-center gap-4 py-3 hover:bg-roxo-50/60">
+                <Link href={`/fila?item=${encodeURIComponent(r.id)}`} className="-mx-3 flex items-center gap-4 rounded-[10px] px-3 py-3 transition-colors hover:bg-roxo-50/60">
                   <div className="min-w-0 flex-1">
                     <p className="flex items-center gap-2 truncate text-sm font-semibold text-tinta">
                       {r.produto} {r.sintetico && <SinteticoTag />}
@@ -148,14 +151,20 @@ export default function VisaoGeral() {
             {alertas.map((g) => (
               <li key={g.texto} className="flex items-center justify-between gap-3">
                 <span className="flex items-center gap-2">
-                  <span className={`size-2 rounded-full ${g.tipo === "bloqueio" ? "bg-piso" : g.tipo === "aprovacao" ? "bg-revisar" : "bg-linha"}`} aria-hidden />
+                  {g.tipo === "bloqueio" ? <Ban size={15} className="shrink-0 text-piso" aria-label="Bloqueia" />
+                    : g.tipo === "aprovacao" ? <AlertTriangle size={15} className="shrink-0 text-revisar" aria-label="Pede aprovação" />
+                    : <Info size={15} className="shrink-0 text-suave" aria-label="Informativo" />}
                   {g.texto}
                 </span>
                 <span className="num text-suave">{g.n}</span>
               </li>
             ))}
           </ul>
-          <p className="mt-4 text-xs text-suave">Cinza = informativo, não exige ação. Laranja = pede aprovação. Vermelho = bloqueia a sugestão.</p>
+          <p className="mt-4 flex flex-wrap gap-x-3 gap-y-1 text-xs text-suave">
+            <span className="inline-flex items-center gap-1"><Info size={13} aria-hidden /> informativo</span>
+            <span className="inline-flex items-center gap-1"><AlertTriangle size={13} className="text-revisar" aria-hidden /> pede aprovação</span>
+            <span className="inline-flex items-center gap-1"><Ban size={13} className="text-piso" aria-hidden /> bloqueia a sugestão</span>
+          </p>
           <div className="mt-4 rounded-[10px] bg-roxo-50 p-3 text-sm">
             <span className="font-semibold text-tinta">{elegiveis}</span> itens poderiam ir para o piloto automático com o teto atual de {pct(p.piloto.teto, 0)}.{" "}
             <Link href="/pilotagem" className="font-semibold text-roxo">Pilotagem</Link>
