@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { api, apiEnabled, ApiError } from "./api";
 import oficial from "@/data/oficial.json";
 import sintetico from "@/data/sintetico.json";
 import type {
@@ -12,10 +13,14 @@ import { recalculateAll } from "./recalcular";
 import { DEFAULT_MARGIN_FORMULA, MARGIN_FORMULAS, type MarginFormula } from "./margin";
 import { buildLearnings, estimateElasticity, MEASUREMENT_DAYS, segmentKey, simulateOutcome, type SegmentLearning } from "./impact";
 
-const BASES: Record<Cenario, BaseDados> = {
+/** Bases embutidas: valem sem API e enquanto a API não responde. */
+const BASES_LOCAIS: Partial<Record<Cenario, BaseDados>> = {
   oficial: oficial as unknown as BaseDados,
   sintetico: sintetico as unknown as BaseDados,
 };
+const CHAVE_SESSAO = "pet-pricing-session";
+
+export type StatusApi = "local" | "conectando" | "online" | "offline";
 
 export const PERFIS: Record<Perfil, { nome: string; descricao: string }> = {
   analista: { nome: "Analista de pricing", descricao: "Decide as recomendações e veta o piloto automático." },
@@ -122,6 +127,11 @@ interface Ctx extends Estado {
   definirEstrategicos: (skus: string[], motivo: string) => void;
   configurarPiloto: (c: Partial<ConfigPiloto>) => void;
   marcarAbertura: (recId: string) => void;
+  /** "local" = sem API configurada; "online" = estado e histórico salvos no servidor. */
+  statusApi: StatusApi;
+  sessaoId: string | null;
+  temBaseEnviada: boolean;
+  enviarBase: (arquivo: File) => Promise<{ ok: true; itens: number; avisos: number } | { ok: false; mensagem: string }>;
   decidir: (recId: string, tipo: TipoDecisao, opts: { preco?: number | null; justificativa?: string }) => void;
   /** Aprovação em lote: um aviso só, e o Desfazer volta todos os itens. */
   decidirLote: (itens: { recId: string; preco: number | null }[], justificativa: string) => void;
@@ -150,6 +160,14 @@ const Contexto = createContext<Ctx | null>(null);
 export function ProvedorPricing({ children }: { children: ReactNode }) {
   const [estado, setEstado] = useState<Estado>(INICIAL);
   const [carregado, setCarregado] = useState(false);
+  const [basesRemotas, setBasesRemotas] = useState<Partial<Record<Cenario, BaseDados>>>({});
+  const [sessaoId, setSessaoId] = useState<string | null>(null);
+  const [statusApi, setStatusApi] = useState<StatusApi>(apiEnabled ? "conectando" : "local");
+  const versaoRef = useRef(0);
+  const ctxRef = useRef({ sessaoId: null as string | null, perfil: null as Perfil | null, online: false });
+  useEffect(() => {
+    ctxRef.current = { sessaoId, perfil: estado.perfil, online: statusApi === "online" };
+  }, [sessaoId, estado.perfil, statusApi]);
 
   useEffect(() => {
     try {
@@ -171,6 +189,80 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
     setCarregado(true);
   }, []);
 
+  // Com API: recupera ou cria a sessão do visitante e usa o estado salvo no servidor.
+  useEffect(() => {
+    if (!apiEnabled || !carregado) return;
+    let cancelado = false;
+    (async () => {
+      try {
+        let id: string | null = null;
+        try {
+          id = localStorage.getItem(CHAVE_SESSAO);
+        } catch {
+          /* sem armazenamento */
+        }
+        let temEnviada = false;
+        if (id) {
+          try {
+            temEnviada = (await api.session(id)).has_upload;
+          } catch (e) {
+            if (e instanceof ApiError && e.status === 404) id = null;
+            else throw e;
+          }
+        }
+        if (!id) id = (await api.createSession()).session_id;
+        try {
+          localStorage.setItem(CHAVE_SESSAO, id);
+        } catch {
+          /* ignora */
+        }
+        const [remoto, baseOficial, baseSintetica, enviada] = await Promise.all([
+          api.getState(id), api.base("oficial"), api.base("sintetico"), temEnviada ? api.upload(id) : Promise.resolve(null),
+        ]);
+        if (cancelado) return;
+        versaoRef.current = remoto.version;
+        setBasesRemotas({ oficial: baseOficial, sintetico: baseSintetica, ...(enviada ? { enviada } : {}) });
+        if (remoto.state) {
+          const lido = remoto.state as Partial<Estado>;
+          setEstado((s) => ({
+            ...INICIAL, ...lido,
+            perfil: s.perfil, nome: s.nome,
+            parametros: { ...PARAMETROS_PADRAO, ...(lido.parametros ?? {}) },
+            piloto: { ...INICIAL.piloto, ...(lido.piloto ?? {}) },
+            cenario: lido.cenario === "enviada" && !enviada ? "oficial" : (lido.cenario ?? s.cenario),
+            aviso: null,
+          }));
+        }
+        setSessaoId(id);
+        setStatusApi("online");
+      } catch {
+        if (!cancelado) setStatusApi("offline");
+      }
+    })();
+    return () => { cancelado = true; };
+  }, [carregado]);
+
+  // Salva o estado no servidor com atraso curto; em conflito, adota a versão atual e grava de novo.
+  useEffect(() => {
+    if (statusApi !== "online" || !sessaoId) return;
+    const t = setTimeout(async () => {
+      const corpo = { ...estado, aviso: null };
+      try {
+        versaoRef.current = (await api.putState(sessaoId, versaoRef.current, corpo)).version;
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 409) {
+          try {
+            versaoRef.current = (await api.getState(sessaoId)).version;
+            versaoRef.current = (await api.putState(sessaoId, versaoRef.current, corpo)).version;
+          } catch {
+            setStatusApi("offline");
+          }
+        } else setStatusApi("offline");
+      }
+    }, 800);
+    return () => clearTimeout(t);
+  }, [estado, statusApi, sessaoId]);
+
   useEffect(() => {
     if (!carregado) return;
     try {
@@ -180,7 +272,7 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
     }
   }, [estado, carregado]);
 
-  const base = BASES[estado.cenario];
+  const base = basesRemotas[estado.cenario] ?? BASES_LOCAIS[estado.cenario] ?? (BASES_LOCAIS.oficial as BaseDados);
   const recs = useMemo(
     () => recalculateAll(base.recomendacoes, estado.regrasPreco, estado.parametros, estado.estrategicos, estado.marginFormula),
     [base, estado.regrasPreco, estado.parametros, estado.estrategicos, estado.marginFormula],
@@ -197,6 +289,12 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
 
   const registrar = useCallback((e: Omit<Evento, "id" | "quando">) => {
     setEstado((s) => ({ ...s, eventos: [{ ...e, id: uid(), quando: agora() }, ...s.eventos].slice(0, 400) }));
+    // Com API, o evento também vai para o histórico encadeado do servidor.
+    const { sessaoId: id, perfil, online } = ctxRef.current;
+    if (online && id) {
+      const profile = e.autor === "Piloto automático" || e.autor === "Sistema" || e.autor === "Simulação" ? "sistema" : perfil ?? "visitante";
+      api.postEvent(id, { author: e.autor.slice(0, 80), profile, kind: e.tipo, text: e.texto.slice(0, 1000), rec_id: e.recId ?? null }).catch(() => undefined);
+    }
   }, []);
 
   // Estável entre renderizações, para o temporizador do aviso não reiniciar a cada mudança.
@@ -350,7 +448,7 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
       sair: () => setEstado((s) => ({ ...s, perfil: null, nome: "" })),
       trocarCenario: (c) => {
         setEstado((s) => ({ ...s, cenario: c, decisoes: [], agendamentos: [], modos: {}, regrasPiloto: [], regrasPreco: [], parametros: PARAMETROS_PADRAO, estrategicos: [], abertoEm: {}, outcomes: [], dismissedLearnings: [], aviso: null }));
-        registrar({ autor, tipo: "base", texto: c === "oficial" ? "Trocou para a base oficial do desafio." : "Trocou para os cenários sintéticos." });
+        registrar({ autor, tipo: "base", texto: c === "oficial" ? "Trocou para a base oficial do desafio." : c === "sintetico" ? "Trocou para os cenários sintéticos." : "Trocou para a base enviada." });
       },
       recomecar: () =>
         setEstado((s) => ({ ...INICIAL, perfil: s.perfil, nome: s.nome, cenario: s.cenario, marginFormula: s.marginFormula })),
@@ -419,6 +517,21 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
         if (c.janelaVetoHoras !== undefined) partes.push(`janela de veto de ${c.janelaVetoHoras} h`);
         registrar({ autor, tipo: "configuração", texto: partes.join(", ") });
       },
+      statusApi,
+      sessaoId,
+      temBaseEnviada: !!basesRemotas.enviada,
+      enviarBase: async (arquivo) => {
+        if (!sessaoId || statusApi !== "online") return { ok: false, mensagem: "O servidor não está conectado. Envio de base só funciona com a API." };
+        try {
+          const payload = await api.sendUpload(sessaoId, arquivo, estado.perfil ?? "visitante");
+          setBasesRemotas((b) => ({ ...b, enviada: payload }));
+          setEstado((s) => ({ ...s, cenario: "enviada", decisoes: [], agendamentos: [], modos: {}, regrasPiloto: [], regrasPreco: [], parametros: PARAMETROS_PADRAO, estrategicos: [], abertoEm: {}, outcomes: [], dismissedLearnings: [], aviso: null }));
+          registrar({ autor, tipo: "base", texto: `Enviou a base “${arquivo.name}” (${payload.recomendacoes.length} itens).` });
+          return { ok: true, itens: payload.recomendacoes.length, avisos: payload.avisos_importacao?.length ?? 0 };
+        } catch (e) {
+          return { ok: false, mensagem: e instanceof Error ? e.message : "Não foi possível enviar a base." };
+        }
+      },
       marcarAbertura: (recId) =>
         setEstado((s) => (s.abertoEm[recId] ? s : { ...s, abertoEm: { ...s.abertoEm, [recId]: agora() } })),
       decidir: (recId, tipo, { preco = null, justificativa = "" }) => decidirItens([{ recId, preco }], tipo, justificativa),
@@ -473,7 +586,7 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
         return alvo.length;
       },
     }),
-    [estado, base, recs, carregado, pode, modoDe, previaPiloto, registrar, autor, regraCobre, eligibility, learnings, learningFor, elasticity, porId, fecharAviso],
+    [estado, base, recs, carregado, pode, modoDe, previaPiloto, registrar, autor, regraCobre, eligibility, learnings, learningFor, elasticity, porId, fecharAviso, statusApi, sessaoId, basesRemotas],
   );
 
   return <Contexto.Provider value={valor}>{children}</Contexto.Provider>;

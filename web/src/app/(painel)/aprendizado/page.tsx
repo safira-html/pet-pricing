@@ -1,10 +1,11 @@
 "use client";
 
 import clsx from "clsx";
-import { ArrowRight, BrainCircuit, CalendarClock, Check, CirclePause, History, LineChart, Plane, RotateCcw, X } from "lucide-react";
+import { ArrowRight, BrainCircuit, CalendarClock, Check, CirclePause, History, LineChart, Plane, RotateCcw, ShieldAlert, ShieldCheck, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { Botao, Card, Titulo, Vazio } from "@/components/ui";
+import { api } from "@/lib/api";
 import { REGRAS } from "@/lib/explain";
 import { dataBR, dataHoraBR, inteiro, moeda, pct } from "@/lib/format";
 import { MEASUREMENT_DAYS, profitChange, verb, VERDICT_COUNT, VERDICT_LABEL, type SegmentLearning } from "@/lib/impact";
@@ -349,7 +350,7 @@ function HistoryTab() {
   const events = p.eventos.filter((e) => !filter || e.tipo === filter);
   return (
     <Card>
-      <Titulo eyebrow="Rastreabilidade">Linha do tempo</Titulo>
+      <Titulo eyebrow="Rastreabilidade" acao={<VerificarHistorico />}>Linha do tempo</Titulo>
       <div className="mb-4 flex flex-wrap gap-1.5">
         {EVENT_TYPES.map((t) => (
           <button key={t} onClick={() => setFilter(filter === t ? null : t)} aria-pressed={filter === t}
@@ -373,5 +374,23 @@ function HistoryTab() {
         </ol>
       )}
     </Card>
+  );
+}
+
+/** Com a API, confere a cadeia de hashes do histórico salvo no servidor. */
+function VerificarHistorico() {
+  const p = usePricing();
+  const [r, setR] = useState<{ valid: boolean; events: number } | null>(null);
+  if (p.statusApi !== "online" || !p.sessaoId) return null;
+  const id = p.sessaoId;
+  return r ? (
+    <span className={clsx("inline-flex items-center gap-1.5 text-sm font-medium", r.valid ? "text-subir" : "text-piso")}>
+      {r.valid ? <ShieldCheck size={16} aria-hidden /> : <ShieldAlert size={16} aria-hidden />}
+      {r.valid ? `${r.events} eventos íntegros no servidor` : "Histórico alterado: a cadeia quebrou"}
+    </span>
+  ) : (
+    <Botao variante="fantasma" onClick={async () => { try { setR(await api.verifyEvents(id)); } catch { setR(null); } }}>
+      <ShieldCheck size={16} /> Verificar integridade
+    </Botao>
   );
 }

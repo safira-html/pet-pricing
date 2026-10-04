@@ -3,7 +3,7 @@ import type { MarginFormula } from "./margin";
 export type Acao = "SUBIR" | "BAIXAR" | "MANTER" | "REVISAR";
 export type Risco = "Alto" | "Médio" | "Baixo";
 export type Canal = "Loja física" | "E-commerce" | "Marketplace";
-export type Cenario = "oficial" | "sintetico";
+export type Cenario = "oficial" | "sintetico" | "enviada";
 export type Perfil = "analista" | "gestor" | "visitante";
 export type Modo = "copiloto" | "autopiloto";
 export type TipoAlerta = "bloqueio" | "aprovacao" | "informativo";
@@ -83,6 +83,8 @@ export interface BaseDados {
   regras: { id: string; tema: string; regra: string; acao: string; criticidade: string }[];
   skus_sinteticos: string[];
   recomendacoes: Recomendacao[];
+  /** Avisos de qualidade da planilha enviada (só na base enviada pelo gestor). */
+  avisos_importacao?: { aba?: string; sku?: string; canal?: string; tipo?: string }[];
 }
 
 export type TipoDecisao = "aprovar" | "editar" | "rejeitar" | "revisar" | "etapa_rampa";

@@ -41,7 +41,7 @@ export default function VisaoGeral() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm text-suave">
-            {p.cenario === "oficial" ? "Base oficial do desafio" : "Cenários sintéticos"} · referência {dataBR(p.base.data_referencia)}
+            {p.cenario === "oficial" ? "Base oficial do desafio" : p.cenario === "sintetico" ? "Cenários sintéticos" : `Base enviada (${p.base.fonte})`} · referência {dataBR(p.base.data_referencia)}
           </p>
           <h1 className="mt-1 text-2xl font-semibold sm:text-3xl">
             {pendentes.length} preços para decidir

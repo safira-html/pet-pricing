@@ -124,7 +124,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
           <Link href="/base" className="mt-3 flex items-center gap-2 rounded-[8px] text-xs text-suave hover:text-roxo">
             <Database size={14} className="shrink-0" aria-hidden />
-            <span className="truncate">{p.cenario === "oficial" ? "Base oficial" : "Cenários sintéticos"} · {dataBR(p.base.data_referencia)} · {p.recs.length} itens</span>
+            <span className="truncate">{p.cenario === "oficial" ? "Base oficial" : p.cenario === "sintetico" ? "Cenários sintéticos" : "Base enviada"} · {dataBR(p.base.data_referencia)} · {p.recs.length} itens</span>
           </Link>
           <p className="mt-2 flex gap-2 text-xs leading-snug text-suave">
             <BookOpenCheck size={14} className="mt-px shrink-0" aria-hidden />

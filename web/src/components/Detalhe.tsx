@@ -1,11 +1,12 @@
 "use client";
 
 import clsx from "clsx";
-import { AlertTriangle, Ban, ChevronLeft, ChevronRight, Info, X } from "lucide-react";
+import { AlertTriangle, Ban, ChevronLeft, ChevronRight, Info, Sparkles, X } from "lucide-react";
 import { PainelDecisao } from "./Decisao";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { MapaPreco } from "./PriceRuler";
-import { AcaoBadge, ModoBadge, RiscoBadge, SinteticoTag } from "./ui";
+import { AcaoBadge, Botao, ModoBadge, RiscoBadge, SinteticoTag } from "./ui";
+import { api, type ExplainResult } from "@/lib/api";
 import { explicar, fraseAlerta, rotuloAlerta } from "@/lib/explain";
 import { dataBR, dataHoraBR, inteiro, mesCurto, moeda, pct } from "@/lib/format";
 import { profitChange, verb, VERDICT_LABEL } from "@/lib/impact";
@@ -66,6 +67,7 @@ export function Detalhe({ r, onFechar, onAnterior, onProximo, progresso }: {
         <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
           <section className="rounded-[15px] border border-linha bg-superficie p-5">
             <MapaPreco r={r} />
+            <ResumoLLM r={r} fatos={motivos} />
             <h3 className="mt-5 text-xs font-semibold tracking-wide text-suave uppercase">Como o sistema chegou aqui</h3>
             <ul className="mt-2 space-y-2 text-sm text-texto">
               {motivos.map((m) => (
@@ -112,6 +114,43 @@ export function Detalhe({ r, onFechar, onAnterior, onProximo, progresso }: {
 
         <PainelDecisao r={r} onDecidido={() => onProximo?.()} />
       </aside>
+    </div>
+  );
+}
+
+/** Resumo em texto corrido feito pelo LLM local; só aparece com a API conectada. */
+function ResumoLLM({ r, fatos }: { r: Recomendacao; fatos: string[] }) {
+  const p = usePricing();
+  const [estado, setEstado] = useState<{ carregando: boolean; resultado: ExplainResult | null; erro: string | null }>({ carregando: false, resultado: null, erro: null });
+  if (p.statusApi !== "online") return null;
+  const pedir = async () => {
+    setEstado({ carregando: true, resultado: null, erro: null });
+    try {
+      const resultado = await api.explain({ product: r.produto, channel: r.canal, action: r.acao, facts: fatos });
+      setEstado({ carregando: false, resultado, erro: null });
+    } catch (e) {
+      setEstado({ carregando: false, resultado: null, erro: e instanceof Error ? e.message : "Não foi possível gerar o resumo." });
+    }
+  };
+  return (
+    <div className="mt-4 rounded-[12px] bg-fundo p-3 text-sm">
+      {!estado.resultado ? (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-suave">{estado.erro ?? "Quer um resumo em texto corrido para colar num e-mail ou relatório?"}</p>
+          <Botao variante="fantasma" onClick={pedir} disabled={estado.carregando}>
+            <Sparkles size={16} /> {estado.carregando ? "Escrevendo…" : "Resumir"}
+          </Botao>
+        </div>
+      ) : (
+        <>
+          <p className="text-texto">{estado.resultado.text}</p>
+          <p className="mt-2 text-xs text-suave">
+            {estado.resultado.source === "llm"
+              ? "Escrito por um modelo de linguagem local e conferido: todo número citado está nos fatos acima."
+              : `Texto montado só com os fatos do motor (${estado.resultado.reason}).`}
+          </p>
+        </>
+      )}
     </div>
   );
 }
