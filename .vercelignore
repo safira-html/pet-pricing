@@ -1,0 +1,9 @@
+# Projeto da API na Vercel (raiz do repositório): só o que o Python precisa.
+web/
+docs/
+deploy/
+api/tests/
+api/scripts/
+api/.venv/
+api/Base de Dados - Popular Pet.xlsx
+**/__pycache__/

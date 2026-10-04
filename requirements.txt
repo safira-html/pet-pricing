@@ -1,0 +1,11 @@
+# Dependências da API na Vercel (mesmas de api/requirements-api.txt).
+# Versões fixadas nas que passaram nos testes locais.
+pandas==2.3.3
+openpyxl==3.1.5
+pydantic==2.13.5
+tzdata==2026.5
+fastapi==0.142.2
+starlette==1.7.0
+uvicorn[standard]==0.54.0
+python-multipart==0.0.32
+httpx==0.28.1

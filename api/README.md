@@ -11,20 +11,20 @@ Requer Python **3.11 ou superior**. Na raiz do projeto, em PowerShell:
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-v1-streamlit.txt
 streamlit run app.py
 ```
 
 Se a política do PowerShell impedir a ativação, use os executáveis diretamente, sem mudar a política do computador:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip install -r requirements-v1-streamlit.txt
 .\.venv\Scripts\python.exe -m streamlit run app.py
 ```
 
 Abra `http://localhost:8501`. O primeiro acesso encontra o Excel na raiz, valida e importa todas as abas no SQLite. O arquivo original nunca é sobrescrito. A pasta `data` e o banco são criados automaticamente. O ambiente preparado nesta máquina reaproveita bibliotecas já instaladas via `--system-site-packages`; a instalação acima também funciona em um ambiente isolado novo.
 
-Em macOS/Linux: `python3 -m venv .venv`, `source .venv/bin/activate`, `pip install -r requirements.txt`, `streamlit run app.py`.
+Em macOS/Linux: `python3 -m venv .venv`, `source .venv/bin/activate`, `pip install -r requirements-v1-streamlit.txt`, `streamlit run app.py`.
 
 ## Configuração e IA opcional
 

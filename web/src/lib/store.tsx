@@ -21,6 +21,16 @@ const BASES_LOCAIS: Partial<Record<Cenario, BaseDados>> = {
 const CHAVE_SESSAO = "pet-pricing-session";
 /** Marca que houve mudança enquanto o servidor estava fora: na volta, o navegador ganha. */
 const CHAVE_OFFLINE = "pet-pricing-offline-changes";
+/** Cópia local da base enviada: o servidor gratuito pode reiniciar e perder a sessão. */
+const CHAVE_ENVIADA = "pet-pricing-upload";
+function lerEnviadaLocal(): BaseDados | null {
+  try {
+    const bruto = localStorage.getItem(CHAVE_ENVIADA);
+    return bruto ? (JSON.parse(bruto) as BaseDados) : null;
+  } catch {
+    return null;
+  }
+}
 
 export type StatusApi = "local" | "conectando" | "online" | "offline";
 
@@ -222,9 +232,10 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
         } catch {
           /* ignora */
         }
-        const [remoto, baseOficial, baseSintetica, enviada] = await Promise.all([
-          api.getState(id), api.base("oficial"), api.base("sintetico"), temEnviada ? api.upload(id) : Promise.resolve(null),
+        const [remoto, baseOficial, baseSintetica, enviadaServidor] = await Promise.all([
+          api.getState(id), api.base("oficial"), api.base("sintetico"), temEnviada ? api.upload(id).catch(() => null) : Promise.resolve(null),
         ]);
+        const enviada = enviadaServidor ?? lerEnviadaLocal();
         if (cancelado) return;
         versaoRef.current = remoto.version;
         setBasesRemotas({ oficial: baseOficial, sintetico: baseSintetica, ...(enviada ? { enviada } : {}) });
@@ -634,6 +645,11 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
         try {
           const payload = await api.sendUpload(sessaoId, arquivo, estado.perfil ?? "visitante");
           setBasesRemotas((b) => ({ ...b, enviada: payload }));
+          try {
+            localStorage.setItem(CHAVE_ENVIADA, JSON.stringify(payload));
+          } catch {
+            /* sem espaço: a base enviada vale só nesta aba */
+          }
           setEstado((s) => ({ ...s, cenario: "enviada", decisoes: [], agendamentos: [], modos: {}, regrasPiloto: [], regrasPreco: [], parametros: PARAMETROS_PADRAO, estrategicos: [], abertoEm: {}, outcomes: [], dismissedLearnings: [], aviso: null }));
           registrar({ autor, tipo: "base", texto: `Enviou a base “${arquivo.name}” (${payload.recomendacoes.length} itens).` });
           return { ok: true, itens: payload.recomendacoes.length, avisos: payload.avisos_importacao?.length ?? 0 };
