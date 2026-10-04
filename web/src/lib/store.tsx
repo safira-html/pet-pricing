@@ -19,6 +19,8 @@ const BASES_LOCAIS: Partial<Record<Cenario, BaseDados>> = {
   sintetico: sintetico as unknown as BaseDados,
 };
 const CHAVE_SESSAO = "pet-pricing-session";
+/** Marca que houve mudança enquanto o servidor estava fora: na volta, o navegador ganha. */
+const CHAVE_OFFLINE = "pet-pricing-offline-changes";
 
 export type StatusApi = "local" | "conectando" | "online" | "offline";
 
@@ -222,7 +224,14 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
         if (cancelado) return;
         versaoRef.current = remoto.version;
         setBasesRemotas({ oficial: baseOficial, sintetico: baseSintetica, ...(enviada ? { enviada } : {}) });
-        if (remoto.state) {
+        let mudouOffline = false;
+        try {
+          mudouOffline = localStorage.getItem(CHAVE_OFFLINE) === "1";
+        } catch {
+          /* ignora */
+        }
+        // Se houve decisões com o servidor fora do ar, elas sobem (o salvamento automático grava o estado local).
+        if (remoto.state && !mudouOffline) {
           const lido = remoto.state as Partial<Estado>;
           setEstado((s) => ({
             ...INICIAL, ...lido,
@@ -235,6 +244,11 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
         }
         setSessaoId(id);
         setStatusApi("online");
+        try {
+          localStorage.removeItem(CHAVE_OFFLINE);
+        } catch {
+          /* ignora */
+        }
       } catch {
         if (!cancelado) setStatusApi("offline");
       }
@@ -269,6 +283,27 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
       localStorage.setItem(CHAVE, JSON.stringify(estado));
     } catch {
       /* ignora */
+    }
+  }, [estado, carregado]);
+
+  // Mudança feita com a API configurada mas fora do ar fica marcada para subir na reconexão.
+  const primeiroEstado = useRef(true);
+  const statusRef = useRef<StatusApi>(statusApi);
+  useEffect(() => {
+    statusRef.current = statusApi;
+  }, [statusApi]);
+  useEffect(() => {
+    if (!carregado) return;
+    if (primeiroEstado.current) {
+      primeiroEstado.current = false;
+      return;
+    }
+    if (apiEnabled && statusRef.current === "offline") {
+      try {
+        localStorage.setItem(CHAVE_OFFLINE, "1");
+      } catch {
+        /* ignora */
+      }
     }
   }, [estado, carregado]);
 

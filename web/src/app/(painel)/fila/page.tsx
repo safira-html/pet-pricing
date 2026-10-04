@@ -12,11 +12,11 @@ import { usePricing } from "@/lib/store";
 import type { Acao, Recomendacao } from "@/lib/types";
 
 type Grupo = "rapida" | "motivo" | "rampa" | "decididas";
-const GRUPOS: { id: Grupo; rotulo: string; dica: string; icone: LucideIcon }[] = [
-  { id: "rapida", rotulo: "Aprovação rápida", dica: "Nenhuma regra pede motivo: dá para aprovar em um clique.", icone: Zap },
-  { id: "motivo", rotulo: "Pedem motivo", dica: "Uma regra pede revisão ou aprovação justificada.", icone: MessageSquareText },
-  { id: "rampa", rotulo: "Rampa de reajuste", dica: "O preço mínimo fica além do limite por decisão: a proposta é subir em etapas, com aprovação.", icone: Footprints },
-  { id: "decididas", rotulo: "Decididos", dica: "Tudo o que já tem decisão registrada.", icone: CheckCheck },
+const GRUPOS: { id: Grupo; rotulo: string; resumo: string; dica: string; icone: LucideIcon }[] = [
+  { id: "rapida", rotulo: "Aprovação rápida", resumo: "um clique, sem motivo", dica: "Nenhuma regra pede motivo: dá para aprovar em um clique.", icone: Zap },
+  { id: "motivo", rotulo: "Pedem motivo", resumo: "uma regra pede justificativa", dica: "Uma regra pede revisão ou aprovação justificada.", icone: MessageSquareText },
+  { id: "rampa", rotulo: "Rampa de reajuste", resumo: "subir em etapas até o mínimo", dica: "O preço mínimo fica além do limite por decisão: a proposta é subir em etapas, com aprovação.", icone: Footprints },
+  { id: "decididas", rotulo: "Decididos", resumo: "já registrados", dica: "Tudo o que já tem decisão registrada.", icone: CheckCheck },
 ];
 const BARRA: Record<Acao, string> = { SUBIR: "bg-subir", BAIXAR: "bg-baixar", MANTER: "bg-manter", REVISAR: "bg-revisar" };
 const CANAIS = ["Loja física", "E-commerce", "Marketplace"] as const;
@@ -85,7 +85,7 @@ function Fila() {
       </header>
 
       <div role="tablist" aria-label="Grupos" className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
-        {GRUPOS.map(({ id, rotulo, icone: Icone }) => (
+        {GRUPOS.map(({ id, rotulo, resumo, icone: Icone }) => (
           <button
             key={id}
             role="tab"
@@ -97,7 +97,8 @@ function Fila() {
             <Icone size={20} className="text-roxo" aria-hidden />
             <span className="min-w-0">
               <span className="num block font-display text-xl leading-none font-semibold text-tinta">{contagem[id]}</span>
-              <span className={clsx("text-sm", grupo === id ? "font-medium text-roxo-800" : "text-suave")}>{rotulo}</span>
+              <span className={clsx("block text-sm", grupo === id ? "font-medium text-roxo-800" : "text-texto")}>{rotulo}</span>
+              <span className="hidden text-xs text-suave sm:block">{resumo}</span>
             </span>
           </button>
         ))}
@@ -178,11 +179,17 @@ function LinhaFila({ r, selecionado, podeRapido, onSel, onAbrir }: {
   const pos = posicaoMercado(r);
   const abaixoMin = r.margem.atual < r.margem.minima;
   return (
-    <li className={clsx("relative overflow-hidden rounded-[14px] border border-linha transition-all hover:border-roxo/40 hover:shadow-[0_6px_18px_rgba(61,35,88,0.08)]", d ? "bg-fundo" : "bg-superficie")}>
+    <li
+      // O cartão inteiro abre o item; caixa de seleção e botões mantêm a própria ação.
+      onClick={(e) => { if (!(e.target as HTMLElement).closest("button, input, a, label")) onAbrir(); }}
+      className={clsx("relative cursor-pointer overflow-hidden rounded-[14px] border border-linha transition-all hover:border-roxo/40 hover:shadow-[0_6px_18px_rgba(61,35,88,0.08)]", d ? "bg-fundo" : "bg-superficie")}>
       <span className={clsx("absolute inset-y-0 left-0 w-1.5", BARRA[r.acao])} aria-hidden />
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 py-3.5 pr-3 pl-4 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:gap-x-4 sm:pr-4 sm:pl-5 lg:grid-cols-[auto_minmax(0,1fr)_minmax(250px,auto)_minmax(0,1.4fr)_auto]">
-        <input type="checkbox" aria-label={`Selecionar ${r.produto}, ${r.canal}`} disabled={!podeRapido}
-          className="size-[18px] accent-[var(--roxo)] disabled:invisible" checked={selecionado} onChange={(e) => onSel(e.target.checked)} />
+        {/* área de toque maior em volta da caixa, sem abrir o cartão */}
+        <label className="-m-3 grid place-items-center p-3">
+          <input type="checkbox" aria-label={`Selecionar ${r.produto}, ${r.canal}`} disabled={!podeRapido}
+            className="size-[18px] accent-[var(--roxo)] disabled:invisible" checked={selecionado} onChange={(e) => onSel(e.target.checked)} />
+        </label>
 
         <button onClick={onAbrir} className="group/nome min-w-0 rounded-[8px] text-left">
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1 font-semibold text-tinta"><span className="min-w-0 truncate underline-offset-2 group-hover/nome:text-roxo-800 group-hover/nome:underline">{r.produto}</span>{r.sintetico && <SinteticoTag />}</span>
