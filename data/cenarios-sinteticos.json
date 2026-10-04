@@ -1,0 +1,69 @@
+{
+  "descricao": "Cenários sintéticos: custos alterados apenas nestes SKUs para demonstrar as quatro ações. Não são dados da Popular Pet.",
+  "origem": "base-oficial.xlsx",
+  "skus": [
+    {
+      "sku": "PP-0025",
+      "objetivo_loja_fisica": "BAIXAR",
+      "fator_custo": 0.839,
+      "custo_total_original": 38.02,
+      "custo_total_sintetico": 31.9
+    },
+    {
+      "sku": "PP-0027",
+      "objetivo_loja_fisica": "BAIXAR",
+      "fator_custo": 0.8494,
+      "custo_total_original": 53.97,
+      "custo_total_sintetico": 45.84
+    },
+    {
+      "sku": "PP-0038",
+      "objetivo_loja_fisica": "BAIXAR",
+      "fator_custo": 0.8434,
+      "custo_total_original": 141.66,
+      "custo_total_sintetico": 119.47
+    },
+    {
+      "sku": "PP-0029",
+      "objetivo_loja_fisica": "MANTER",
+      "fator_custo": 0.9082,
+      "custo_total_original": 69.91,
+      "custo_total_sintetico": 63.49
+    },
+    {
+      "sku": "PP-0032",
+      "objetivo_loja_fisica": "MANTER",
+      "fator_custo": 0.8994,
+      "custo_total_original": 93.82,
+      "custo_total_sintetico": 84.38
+    },
+    {
+      "sku": "PP-0028",
+      "objetivo_loja_fisica": "MANTER",
+      "fator_custo": 0.9123,
+      "custo_total_original": 61.94,
+      "custo_total_sintetico": 56.51
+    },
+    {
+      "sku": "PP-0024",
+      "objetivo_loja_fisica": "SUBIR",
+      "fator_custo": 0.9304,
+      "custo_total_original": 30.05,
+      "custo_total_sintetico": 27.96
+    },
+    {
+      "sku": "PP-0017",
+      "objetivo_loja_fisica": "SUBIR",
+      "fator_custo": 0.9403,
+      "custo_total_original": 131.12,
+      "custo_total_sintetico": 123.29
+    },
+    {
+      "sku": "PP-0040",
+      "objetivo_loja_fisica": "SUBIR",
+      "fator_custo": 0.9289,
+      "custo_total_original": 157.6,
+      "custo_total_sintetico": 146.39
+    }
+  ]
+}

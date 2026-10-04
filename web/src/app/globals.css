@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+/* Design system Popular Pet — versão institucional.
+   Fonte: popularpet.com.br (roxo #764EA0, verde-limão #A6CE39, Poppins/Inter). */
+:root {
+  --roxo: #764ea0;
+  --roxo-700: #644288;
+  --roxo-800: #5a3580;
+  --roxo-900: #3d2358;
+  --roxo-100: #ece4f5;
+  --roxo-50: #f6f2fa;
+  --limao: #a6ce39;
+  --limao-700: #5d7a12;
+  --limao-100: #edf6d4;
+  --tinta: #2b2533;
+  --texto: #444444;
+  --suave: #6e6878;
+  --linha: #e4dfea;
+  --fundo: #f7f5fa;
+  --superficie: #ffffff;
+  --subir: #4f7a0f;
+  --subir-bg: #eef6da;
+  --baixar: #2b63a8;
+  --baixar-bg: #e6eef9;
+  --manter: #625b6c;
+  --manter-bg: #efedf2;
+  --revisar: #b0530c;
+  --revisar-bg: #fcefe2;
+  --piso: #c23b2c;
+  --piso-bg: #fbe9e6;
+}
+
+@theme inline {
+  --color-roxo: var(--roxo);
+  --color-roxo-700: var(--roxo-700);
+  --color-roxo-800: var(--roxo-800);
+  --color-roxo-900: var(--roxo-900);
+  --color-roxo-100: var(--roxo-100);
+  --color-roxo-50: var(--roxo-50);
+  --color-limao: var(--limao);
+  --color-limao-700: var(--limao-700);
+  --color-limao-100: var(--limao-100);
+  --color-tinta: var(--tinta);
+  --color-texto: var(--texto);
+  --color-suave: var(--suave);
+  --color-linha: var(--linha);
+  --color-fundo: var(--fundo);
+  --color-superficie: var(--superficie);
+  --color-subir: var(--subir);
+  --color-subir-bg: var(--subir-bg);
+  --color-baixar: var(--baixar);
+  --color-baixar-bg: var(--baixar-bg);
+  --color-manter: var(--manter);
+  --color-manter-bg: var(--manter-bg);
+  --color-revisar: var(--revisar);
+  --color-revisar-bg: var(--revisar-bg);
+  --color-piso: var(--piso);
+  --color-piso-bg: var(--piso-bg);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-poppins);
+  --radius-pp: 15px;
+}
+
+/* Estilos base ficam na camada "base" para que as classes utilitárias
+   (ex.: text-white num título) sempre tenham prioridade. */
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    background: var(--fundo);
+    color: var(--texto);
+    font-family: var(--font-inter), system-ui, sans-serif;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-poppins), system-ui, sans-serif;
+    color: var(--tinta);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--roxo);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
