@@ -23,11 +23,13 @@ const BASES: Record<Cenario, { titulo: string; texto: string }> = {
 /** Roteiro para a banca: a ordem importa, porque cada passo usa o anterior. */
 const TRILHA = [
   { titulo: "Ver o tamanho do problema", texto: "Na visão geral, a base oficial mostra quantos itens estão abaixo da margem mínima.", href: "/" },
-  { titulo: "Entender um caso difícil", texto: "Abra a ração premium no e-commerce: o preço mínimo fica 7,5% acima, além do limite de 5%.", href: "/fila?grupo=rampa&item=PP-0001%7CE-commerce" },
+  { titulo: "Comparar as fórmulas de margem", texto: "Em Regras e margem, veja como a escolha entre contribuição e margem bruta muda o resultado.", href: "/regras#margem" },
   { titulo: "Trocar para os cenários sintéticos", texto: "Use o botão abaixo. Aparecem itens para baixar e manter.", href: "/base" },
   { titulo: "Aprovar em um clique", texto: "No grupo Aprovação rápida, aprove o sachê da loja física e veja o aviso com Desfazer.", href: "/fila?grupo=rapida" },
-  { titulo: "Ligar o piloto automático", texto: "Em Pilotagem, ligue a chave, suba o teto para 4%, aplique o atalho Curva B e rode. Depois vete uma das mudanças.", href: "/pilotagem" },
-  { titulo: "Mostrar a rastreabilidade", texto: "Em Aprendizado, cada passo aparece com autor, horário e motivo.", href: "/aprendizado" },
+  { titulo: "Ligar o piloto automático", texto: "Em Pilotagem, ligue a chave, suba o teto para 4%, crie a regra “curva B em qualquer canal” e agende. Depois vete uma das mudanças.", href: "/pilotagem" },
+  { titulo: "Medir o impacto", texto: "Em Impacto e aprendizado, simule 30 dias: cada mudança mostra vendas e contribuição antes e depois.", href: "/aprendizado" },
+  { titulo: "Ver o aprendizado agir", texto: "Grupos em que as mudanças pioraram a contribuição saem do piloto automático sozinhos.", href: "/aprendizado" },
+  { titulo: "Mostrar como entra na operação", texto: "Em Integrações, as fontes da Popular Pet e o arquivo de preços aprovados para o ERP.", href: "/integrations" },
 ];
 
 export default function Base() {
@@ -76,7 +78,7 @@ export default function Base() {
 
       <Card>
         <Titulo eyebrow="Roteiro para a banca" acao={<Botao variante="secundario" onClick={p.recomecar}><RotateCcw size={16} /> Recomeçar</Botao>}>
-          Demonstração em 6 passos
+          Demonstração em {TRILHA.length} passos
         </Titulo>
         <ol className="grid gap-3 md:grid-cols-2">
           {TRILHA.map((t, i) => (

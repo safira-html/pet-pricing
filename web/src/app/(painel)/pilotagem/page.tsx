@@ -4,9 +4,10 @@ import clsx from "clsx";
 import { CalendarClock, Lock, Plus, Trash2, Undo2, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { Select } from "@/components/Select";
 import { AcaoBadge, Botao, Card, SinteticoTag, Titulo, Vazio } from "@/components/ui";
 import { moeda, pct } from "@/lib/format";
-import { cobre, descreverRegra, elegivelPiloto, usePricing } from "@/lib/store";
+import { cobre, descreverRegra, usePricing } from "@/lib/store";
 import type { Canal, Recomendacao, RegraPiloto } from "@/lib/types";
 
 const CANAIS: Canal[] = ["Loja física", "E-commerce", "Marketplace"];
@@ -26,7 +27,6 @@ function useAgora(ms = 1000) {
   return t;
 }
 
-const SELECT = "mt-1.5 h-11 w-full rounded-[10px] border border-linha bg-superficie px-3 text-sm outline-none focus:border-roxo disabled:opacity-50";
 
 export default function Pilotagem() {
   const p = usePricing();
@@ -46,7 +46,7 @@ export default function Pilotagem() {
   const emAuto = p.recs.filter((r) => p.modoDe(r.id) === "autopiloto");
   const excecoes = p.recs.filter((r) => p.origemModo(r.id) === "exceção");
   const cobertosNova = p.recs.filter((r) => cobre(nova, r));
-  const elegNova = cobertosNova.filter((r) => elegivelPiloto(r, p.piloto.teto).elegivel);
+  const elegNova = cobertosNova.filter((r) => p.eligibility(r).elegivel);
   const veto = p.agendamentos.filter((a) => a.origem === "piloto automático" && a.status === "aguardando veto");
 
   return (
@@ -81,12 +81,8 @@ export default function Pilotagem() {
               onChange={(e) => p.configurarPiloto({ teto: Number(e.target.value) / 100 })} className="mt-3 w-full accent-[var(--roxo)]" />
             <span className="flex justify-between text-xs text-suave"><span>1%</span><span>5% · limite da regra R02</span></span>
           </label>
-          <label className="mt-5 block text-sm font-medium text-tinta">
-            Tempo para vetar antes de aplicar
-            <select disabled={!gestor} value={p.piloto.janelaVetoHoras} onChange={(e) => p.configurarPiloto({ janelaVetoHoras: Number(e.target.value) })} className={SELECT}>
-              {JANELAS.map((j) => <option key={j.h} value={j.h}>{j.t}</option>)}
-            </select>
-          </label>
+          <Select className="mt-5" rotulo="Tempo para vetar antes de aplicar" disabled={!gestor} valor={String(p.piloto.janelaVetoHoras)}
+            opcoes={JANELAS.map((j) => ({ valor: String(j.h), rotulo: j.t }))} onChange={(v) => p.configurarPiloto({ janelaVetoHoras: Number(v) })} />
           <div className="mt-5 rounded-[12px] bg-fundo p-4 text-sm leading-relaxed">
             <p className="mb-1 font-semibold text-tinta">Um item só muda sozinho quando:</p>
             <ul className="list-disc space-y-0.5 pl-5 text-texto">
@@ -101,21 +97,12 @@ export default function Pilotagem() {
         <Card>
           <Titulo eyebrow="Regras de grupo">Quem fica em piloto automático</Titulo>
           <div className="grid gap-3 sm:grid-cols-3">
-            <label className="text-sm font-medium text-tinta">Curva
-              <select disabled={!gestor} value={nova.curva ?? ""} onChange={(e) => setNova({ ...nova, curva: (e.target.value || null) as RegraPiloto["curva"] })} className={SELECT}>
-                <option value="">Qualquer</option>{["A", "B", "C"].map((c) => <option key={c} value={c}>Curva {c}</option>)}
-              </select>
-            </label>
-            <label className="text-sm font-medium text-tinta">Canal
-              <select disabled={!gestor} value={nova.canal ?? ""} onChange={(e) => setNova({ ...nova, canal: (e.target.value || null) as Canal | null })} className={SELECT}>
-                <option value="">Qualquer</option>{CANAIS.map((c) => <option key={c}>{c}</option>)}
-              </select>
-            </label>
-            <label className="text-sm font-medium text-tinta">Categoria
-              <select disabled={!gestor} value={nova.categoria ?? ""} onChange={(e) => setNova({ ...nova, categoria: e.target.value || null })} className={SELECT}>
-                <option value="">Qualquer</option>{categorias.map((c) => <option key={c}>{c}</option>)}
-              </select>
-            </label>
+            <Select rotulo="Curva" disabled={!gestor} valor={nova.curva ?? ""} onChange={(v) => setNova({ ...nova, curva: (v || null) as RegraPiloto["curva"] })}
+              opcoes={[{ valor: "", rotulo: "Qualquer curva" }, ...["A", "B", "C"].map((c) => ({ valor: c, rotulo: `Curva ${c}` }))]} />
+            <Select rotulo="Canal" disabled={!gestor} valor={nova.canal ?? ""} onChange={(v) => setNova({ ...nova, canal: (v || null) as Canal | null })}
+              opcoes={[{ valor: "", rotulo: "Qualquer canal" }, ...CANAIS.map((c) => ({ valor: c, rotulo: c }))]} />
+            <Select rotulo="Categoria" disabled={!gestor} valor={nova.categoria ?? ""} onChange={(v) => setNova({ ...nova, categoria: (v as string) || null })}
+              opcoes={[{ valor: "", rotulo: "Qualquer categoria" }, ...categorias.map((c) => ({ valor: c, rotulo: c }))]} />
           </div>
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-[12px] bg-fundo px-4 py-3">
             <p className="text-sm text-texto">
@@ -132,7 +119,7 @@ export default function Pilotagem() {
             <ul className="mt-2 divide-y divide-linha">
               {p.regrasPiloto.map((g) => {
                 const cob = p.recs.filter((r) => cobre(g, r));
-                const ok = cob.filter((r) => elegivelPiloto(r, p.piloto.teto).elegivel).length;
+                const ok = cob.filter((r) => p.eligibility(r).elegivel).length;
                 return (
                   <li key={g.id} className="flex items-center justify-between gap-3 py-2.5">
                     <span className="text-sm"><span className="font-medium text-tinta">{descreverRegra(g)}</span>
@@ -231,7 +218,7 @@ export default function Pilotagem() {
                     if (!r) return <td key={c} />;
                     const auto = p.modoDe(r.id) === "autopiloto";
                     const origem = p.origemModo(r.id);
-                    const e = elegivelPiloto(r, p.piloto.teto);
+                    const e = p.eligibility(r);
                     return (
                       <td key={c} className="py-2 pr-2">
                         <button disabled={!gestor} title={e.elegivel ? "Passaria pelas proteções hoje" : e.motivos.join("; ")}

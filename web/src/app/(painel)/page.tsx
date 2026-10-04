@@ -7,7 +7,7 @@ import { AcaoBadge, Card, SinteticoTag, Titulo } from "@/components/ui";
 import { ACAO_ROTULO, REGRAS, resumoCurto } from "@/lib/explain";
 import { dataBR, inteiro, pct, pp } from "@/lib/format";
 import { FAIXA_COMPETITIVA, metricas } from "@/lib/metricas";
-import { elegivelPiloto, usePricing } from "@/lib/store";
+import { usePricing } from "@/lib/store";
 import type { Acao, Canal } from "@/lib/types";
 
 const ACOES: Acao[] = ["SUBIR", "BAIXAR", "MANTER", "REVISAR"];
@@ -22,7 +22,7 @@ export default function VisaoGeral() {
   const total = porAcao(p.recs);
   const semPreco = p.recs.filter((r) => r.preco_sugerido == null).length;
   const comRampa = p.recs.filter((r) => r.proposta.rampa).length;
-  const elegiveis = p.recs.filter((r) => elegivelPiloto(r, p.piloto.teto).elegivel).length;
+  const elegiveis = p.recs.filter((r) => p.eligibility(r).elegivel).length;
   const proximas = [...pendentes].sort((a, b) => b.prioridade - a.prioridade).slice(0, 5);
 
   const grupos = new Map<string, { texto: string; tipo: string; n: number }>();
@@ -102,7 +102,7 @@ export default function VisaoGeral() {
           <Titulo eyebrow="Medido nesta sessão">Impacto das suas decisões</Titulo>
           <dl className="space-y-4 text-sm">
             <Metrica rotulo={`Na faixa competitiva (até ${pct(FAIXA_COMPETITIVA, 0)} do mercado)`} hoje={pct(m.faixaHoje, 0)} depois={pct(m.faixaDepois, 0)} delta={pp(m.faixaDepois - m.faixaHoje)} />
-            <Metrica rotulo="Margem média de contribuição" hoje={pct(m.margemHoje)} depois={pct(m.margemDepois)} delta={pp(m.margemDepois - m.margemHoje)} />
+            <Metrica rotulo={p.marginFormula === "contribution" ? "Margem média de contribuição" : "Margem bruta média"} hoje={pct(m.margemHoje)} depois={pct(m.margemDepois)} delta={pp(m.margemDepois - m.margemHoje)} />
             <Metrica rotulo="Itens abaixo do preço mínimo" hoje={inteiro(m.abaixoPisoHoje)} depois={inteiro(m.abaixoPisoDepois)} />
             <div className="grid grid-cols-2 gap-3 border-t border-linha pt-4">
               <div>

@@ -4,8 +4,12 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import oficial from "@/data/oficial.json";
 import sintetico from "@/data/sintetico.json";
 import type {
-  Agendamento, BaseDados, Cenario, ConfigPiloto, Decisao, Evento, Modo, Perfil, Recomendacao, RegraPiloto, TipoDecisao,
+  Agendamento, BaseDados, Cenario, ConfigPiloto, Decisao, Evento, Modo, Outcome, ParametrosBase, Perfil, Recomendacao, RegraPiloto, RegraPreco, TipoDecisao,
 } from "./types";
+import { PARAMETROS_PADRAO } from "./types";
+import { recalculateAll } from "./recalcular";
+import { DEFAULT_MARGIN_FORMULA, MARGIN_FORMULAS, type MarginFormula } from "./margin";
+import { buildLearnings, estimateElasticity, MEASUREMENT_DAYS, segmentKey, simulateOutcome, type SegmentLearning } from "./impact";
 
 const BASES: Record<Cenario, BaseDados> = {
   oficial: oficial as unknown as BaseDados,
@@ -33,11 +37,18 @@ interface Estado {
   /** Exceções por item: valem acima das regras de grupo. */
   modos: Record<string, Modo>;
   regrasPiloto: RegraPiloto[];
+  regrasPreco: RegraPreco[];
+  parametros: ParametrosBase;
+  estrategicos: string[];
   piloto: ConfigPiloto;
   agendamentos: Agendamento[];
   eventos: Evento[];
   abertoEm: Record<string, string>;
   aviso: { texto: string; recId: string } | null;
+  marginFormula: MarginFormula;
+  outcomes: Outcome[];
+  /** Aprendizados que o gestor decidiu não aplicar ao piloto automático. */
+  dismissedLearnings: string[];
 }
 
 const INICIAL: Estado = {
@@ -47,11 +58,17 @@ const INICIAL: Estado = {
   decisoes: [],
   modos: {},
   regrasPiloto: [],
+  regrasPreco: [],
+  parametros: PARAMETROS_PADRAO,
+  estrategicos: [],
   piloto: { ligado: false, teto: 0.03, janelaVetoHoras: 24 },
   agendamentos: [],
   eventos: [],
   abertoEm: {},
   aviso: null,
+  marginFormula: DEFAULT_MARGIN_FORMULA,
+  outcomes: [],
+  dismissedLearnings: [],
 };
 
 const AVISO: Record<TipoDecisao, string> = { aprovar: "Aprovada", editar: "Ajustada", rejeitar: "Rejeitada", revisar: "Em revisão", etapa_rampa: "1ª etapa aprovada" };
@@ -71,8 +88,9 @@ export function descreverRegra(g: Pick<RegraPiloto, "curva" | "canal" | "categor
 }
 
 /** Uma recomendação pode ir para o piloto automático? Regras propostas na V2. */
-export function elegivelPiloto(r: Recomendacao, teto: number) {
+export function elegivelPiloto(r: Recomendacao, teto: number, learning?: SegmentLearning) {
   const motivos: string[] = [];
+  if (learning?.effect === "hold" && !learning.dismissed) motivos.push(`Aprendizado: ${learning.reason}`);
   if (r.acao !== "SUBIR" && r.acao !== "BAIXAR") motivos.push(`A recomendação é ${r.acao.toLowerCase()}`);
   if (r.alertas.some((a) => a.tipo === "bloqueio")) motivos.push("Há um bloqueio");
   if (r.alertas.some((a) => a.tipo === "aprovacao")) motivos.push("Uma regra pede aprovação humana");
@@ -95,12 +113,27 @@ interface Ctx extends Estado {
   limparExcecao: (recIds: string[]) => void;
   adicionarRegraPiloto: (r: Omit<RegraPiloto, "id" | "criadaEm">) => void;
   removerRegraPiloto: (id: string) => void;
+  salvarRegraPreco: (g: Omit<RegraPreco, "id" | "autor" | "atualizadaEm"> & { id?: string }) => void;
+  alternarRegraPreco: (id: string) => void;
+  removerRegraPreco: (id: string) => void;
+  definirParametro: (cod: keyof ParametrosBase, valor: number, motivo: string) => void;
+  definirEstrategicos: (skus: string[], motivo: string) => void;
   configurarPiloto: (c: Partial<ConfigPiloto>) => void;
   marcarAbertura: (recId: string) => void;
   decidir: (recId: string, tipo: TipoDecisao, opts: { preco?: number | null; justificativa?: string }) => void;
   decisaoDe: (recId: string) => Decisao | undefined;
   vetar: (agId: string) => void;
   previaPiloto: () => Recomendacao[];
+  /** Elegibilidade ao piloto automático com teto e aprendizados. */
+  eligibility: (r: Recomendacao) => { elegivel: boolean; motivos: string[] };
+  learnings: SegmentLearning[];
+  learningFor: (r: Recomendacao) => SegmentLearning | undefined;
+  elasticity: Record<string, number>;
+  setMarginFormula: (f: MarginFormula, reason: string) => void;
+  /** Demo: aplica as mudanças agendadas e mede o resultado 30 dias depois. */
+  simulateMeasurement: () => number;
+  dismissLearning: (key: string, reason: string) => void;
+  restoreLearning: (key: string) => void;
   rodarPiloto: () => number;
   desfazer: (recId: string) => void;
   fecharAviso: () => void;
@@ -116,8 +149,11 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
     try {
       const salvo = localStorage.getItem(CHAVE);
       // Lê o navegador só depois da hidratação, para o HTML do servidor e do cliente baterem.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (salvo) setEstado({ ...INICIAL, ...JSON.parse(salvo), aviso: null });
+      if (salvo) {
+        const lido = JSON.parse(salvo);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setEstado({ ...INICIAL, ...lido, parametros: { ...PARAMETROS_PADRAO, ...(lido.parametros ?? {}) }, aviso: null });
+      }
     } catch {
       /* sem armazenamento: segue com o estado inicial */
     }
@@ -134,7 +170,18 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
   }, [estado, carregado]);
 
   const base = BASES[estado.cenario];
-  const recs = base.recomendacoes;
+  const recs = useMemo(
+    () => recalculateAll(base.recomendacoes, estado.regrasPreco, estado.parametros, estado.estrategicos, estado.marginFormula),
+    [base, estado.regrasPreco, estado.parametros, estado.estrategicos, estado.marginFormula],
+  );
+  const elasticity = useMemo(() => estimateElasticity(base.recomendacoes), [base]);
+  const learnings = useMemo(
+    () => buildLearnings(recs, estado.outcomes, estado.decisoes, estado.dismissedLearnings),
+    [recs, estado.outcomes, estado.decisoes, estado.dismissedLearnings],
+  );
+  const learningByKey = useMemo(() => new Map(learnings.map((l) => [l.key, l])), [learnings]);
+  const learningFor = useCallback((r: Recomendacao) => learningByKey.get(segmentKey(r)), [learningByKey]);
+  const eligibility = useCallback((r: Recomendacao) => elegivelPiloto(r, estado.piloto.teto, learningFor(r)), [estado.piloto.teto, learningFor]);
   const autor = estado.nome || (estado.perfil ? PERFIS[estado.perfil].nome : "—");
 
   const registrar = useCallback((e: Omit<Evento, "id" | "quando">) => {
@@ -161,10 +208,10 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
       recs.filter(
         (r) =>
           modoDe(r.id) === "autopiloto" &&
-          elegivelPiloto(r, estado.piloto.teto).elegivel &&
+          eligibility(r).elegivel &&
           !estado.decisoes.some((d) => d.recId === r.id),
       ),
-    [recs, modoDe, estado.piloto.teto, estado.decisoes],
+    [recs, modoDe, eligibility, estado.decisoes],
   );
 
   const valor: Ctx = useMemo(
@@ -177,17 +224,56 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
       modoDe,
       origemModo: (recId) => (estado.modos[recId] ? "exceção" : regraCobre(recId) ? "regra" : "padrão"),
       previaPiloto,
+      eligibility,
+      learnings,
+      learningFor,
+      elasticity,
+      setMarginFormula: (f, reason) => {
+        setEstado((s) => ({ ...s, marginFormula: f }));
+        registrar({ autor, tipo: "configuração", texto: `trocou a fórmula de margem para “${MARGIN_FORMULAS[f].label}”. Motivo: ${reason}` });
+      },
+      simulateMeasurement: () => {
+        const pendentes = estado.agendamentos.filter((a) => a.status === "agendado" || a.status === "aguardando veto");
+        if (!pendentes.length) return 0;
+        const appliedAt = agora();
+        const novos = pendentes
+          .map((a) => {
+            const r = porId.get(a.recId);
+            return r ? simulateOutcome(r, a, elasticity, estado.marginFormula, appliedAt) : null;
+          })
+          .filter((o): o is Outcome => o !== null);
+        const ids = new Set(pendentes.map((a) => a.id));
+        setEstado((s) => ({
+          ...s,
+          agendamentos: s.agendamentos.map((a) => (ids.has(a.id) ? { ...a, status: "aplicado" } : a)),
+          outcomes: [...novos, ...s.outcomes.filter((o) => !ids.has(o.scheduleId))],
+        }));
+        const piores = novos.filter((o) => o.verdict === "worsened").length;
+        registrar({
+          autor: "Simulação", tipo: "impacto",
+          texto: `aplicou ${novos.length} ${novos.length === 1 ? "mudança" : "mudanças"} e mediu ${MEASUREMENT_DAYS} dias depois: ${novos.length - piores} sem piora, ${piores} com piora na contribuição.`,
+        });
+        return novos.length;
+      },
+      dismissLearning: (key, reason) => {
+        setEstado((s) => ({ ...s, dismissedLearnings: [...new Set([...s.dismissedLearnings, key])] }));
+        registrar({ autor, tipo: "configuração", texto: `manteve o piloto automático em ${key.replace("|", " · ")} apesar do aprendizado. Motivo: ${reason}` });
+      },
+      restoreLearning: (key) => {
+        setEstado((s) => ({ ...s, dismissedLearnings: s.dismissedLearnings.filter((k) => k !== key) }));
+        registrar({ autor, tipo: "configuração", texto: `voltou a aplicar o aprendizado de ${key.replace("|", " · ")} ao piloto automático.` });
+      },
       entrar: (perfil, nome) => {
         setEstado((s) => ({ ...s, perfil, nome }));
         registrar({ autor: nome || PERFIS[perfil].nome, tipo: "configuração", texto: `Entrou como ${PERFIS[perfil].nome}.` });
       },
       sair: () => setEstado((s) => ({ ...s, perfil: null, nome: "" })),
       trocarCenario: (c) => {
-        setEstado((s) => ({ ...s, cenario: c, decisoes: [], agendamentos: [], modos: {}, regrasPiloto: [], abertoEm: {} }));
+        setEstado((s) => ({ ...s, cenario: c, decisoes: [], agendamentos: [], modos: {}, regrasPiloto: [], regrasPreco: [], parametros: PARAMETROS_PADRAO, estrategicos: [], abertoEm: {}, outcomes: [], dismissedLearnings: [] }));
         registrar({ autor, tipo: "base", texto: c === "oficial" ? "Trocou para a base oficial do desafio." : "Trocou para os cenários sintéticos." });
       },
       recomecar: () =>
-        setEstado((s) => ({ ...INICIAL, perfil: s.perfil, nome: s.nome, cenario: s.cenario })),
+        setEstado((s) => ({ ...INICIAL, perfil: s.perfil, nome: s.nome, cenario: s.cenario, marginFormula: s.marginFormula })),
       definirModo: (recIds, modo, rotulo) => {
         setEstado((s) => {
           const modos = { ...s.modos };
@@ -212,6 +298,30 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
         const g = estado.regrasPiloto.find((x) => x.id === id);
         setEstado((s) => ({ ...s, regrasPiloto: s.regrasPiloto.filter((x) => x.id !== id) }));
         if (g) registrar({ autor, tipo: "modo", texto: `removeu a regra “${descreverRegra(g)}”.` });
+      },
+      salvarRegraPreco: (g) => {
+        const nova = !g.id;
+        const regra: RegraPreco = { ...g, id: g.id ?? uid(), autor, atualizadaEm: agora() };
+        setEstado((s) => ({ ...s, regrasPreco: nova ? [...s.regrasPreco, regra] : s.regrasPreco.map((x) => (x.id === regra.id ? regra : x)) }));
+        registrar({ autor, tipo: "configuração", texto: `${nova ? "criou" : "editou"} a regra de preço “${g.nome}”. Motivo: ${g.justificativa}` });
+      },
+      alternarRegraPreco: (id) => {
+        const g = estado.regrasPreco.find((x) => x.id === id);
+        setEstado((s) => ({ ...s, regrasPreco: s.regrasPreco.map((x) => (x.id === id ? { ...x, ativa: !x.ativa, atualizadaEm: agora() } : x)) }));
+        if (g) registrar({ autor, tipo: "configuração", texto: `${g.ativa ? "pausou" : "reativou"} a regra de preço “${g.nome}”.` });
+      },
+      removerRegraPreco: (id) => {
+        const g = estado.regrasPreco.find((x) => x.id === id);
+        setEstado((s) => ({ ...s, regrasPreco: s.regrasPreco.filter((x) => x.id !== id) }));
+        if (g) registrar({ autor, tipo: "configuração", texto: `removeu a regra de preço “${g.nome}”.` });
+      },
+      definirParametro: (cod, valor, motivo) => {
+        setEstado((s) => ({ ...s, parametros: { ...s.parametros, [cod]: valor } }));
+        registrar({ autor, tipo: "configuração", texto: `alterou o parâmetro da ${cod} para ${valor}. Motivo: ${motivo}` });
+      },
+      definirEstrategicos: (skus, motivo) => {
+        setEstado((s) => ({ ...s, estrategicos: skus }));
+        registrar({ autor, tipo: "configuração", texto: `definiu ${skus.length} produtos estratégicos (R04). Motivo: ${motivo}` });
       },
       configurarPiloto: (c) => {
         setEstado((s) => ({ ...s, piloto: { ...s.piloto, ...c } }));
@@ -292,7 +402,7 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
         return alvo.length;
       },
     }),
-    [estado, base, recs, carregado, pode, modoDe, previaPiloto, registrar, autor, regraCobre],
+    [estado, base, recs, carregado, pode, modoDe, previaPiloto, registrar, autor, regraCobre, eligibility, learnings, learningFor, elasticity, porId],
   );
 
   return <Contexto.Provider value={valor}>{children}</Contexto.Provider>;

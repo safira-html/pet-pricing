@@ -47,3 +47,22 @@ Agora o gestor monta regras combinando curva, canal e categoria. Exemplos: "Todo
 
 - **Dica #15 (testar em dispositivo real):** testar o front num celular depois da publicação.
 - **Contraste:** medir todas as combinações com ferramenta de contraste (dica #17). As principais (texto suave `#6E6878` sobre branco e roxo-800 sobre lilás claro) ficam acima de 4,5:1 por cálculo, mas ainda falta uma checagem tela a tela.
+
+## Rodada de 04/10 (noite)
+
+- **Fórmula de margem selecionável:** contribuição é o padrão e margem bruta sobre reposição é a alternativa. A prévia do front confere com o motor do Allan nas duas fórmulas: 480/480 itens idênticos (`web/scripts/teste-recalculo.mts` contra `api/scripts/export_gross_reference.py`). A troca é só do gestor, pede motivo e fica no histórico.
+- **Impacto e aprendizado:**
+  - cada mudança aplicada é medida 30 dias depois (na demo, simulada a partir das vendas da base e da sensibilidade a preço estimada por categoria);
+  - o resultado vira aprendizado por categoria e canal;
+  - aprendizado negativo tira o grupo do piloto automático;
+  - aprendizado positivo vira sugestão de regra para o gestor.
+- **Integrações:** fontes do ERP e do módulo de coleta de concorrência, todas "a conectar", com campos esperados e regras que cada uma alimenta. O arquivo CSV de preços aprovados para o ERP já funciona.
+- **Menu lateral:**
+  - itens agrupados por etapa (Decidir, Automatizar, Acompanhar, Dados);
+  - área de clique de 44 px e ícone em bloco;
+  - seta ao passar o mouse e contadores (itens sem decisão, vetos, grupos fora do piloto, fontes a conectar).
+- **Tela de entrada:**
+  - moldura com painel em degradê da marca e prévia de um caso real da base;
+  - ciclo do produto em 3 passos;
+  - perfis como cartões com ícone e campo preenchido;
+  - login corporativo indicado como caminho de produção.

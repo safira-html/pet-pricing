@@ -1,3 +1,5 @@
+import type { MarginFormula } from "./margin";
+
 export type Acao = "SUBIR" | "BAIXAR" | "MANTER" | "REVISAR";
 export type Risco = "Alto" | "Médio" | "Baixo";
 export type Canal = "Loja física" | "E-commerce" | "Marketplace";
@@ -68,6 +70,8 @@ export interface Recomendacao {
   regra_aplicada: string;
   proposta: { rampa: Rampa | null; elegivel_piloto_automatico: boolean; motivos_inelegivel: string[] };
   data_referencia: string;
+  /** Fórmula usada no cálculo desta recomendação; ausente = margem de contribuição (motor original). */
+  margin_formula?: MarginFormula;
 }
 
 export interface BaseDados {
@@ -110,7 +114,7 @@ export interface Evento {
   id: string;
   quando: string;
   autor: string;
-  tipo: "decisão" | "modo" | "configuração" | "piloto automático" | "veto" | "base";
+  tipo: "decisão" | "modo" | "configuração" | "piloto automático" | "veto" | "base" | "impacto";
   texto: string;
   recId?: string;
 }
@@ -128,4 +132,64 @@ export interface RegraPiloto {
   canal: Canal | null;
   categoria: string | null;
   criadaEm: string;
+}
+
+export type Escopo = "todos" | "curva" | "categoria" | "marca" | "canal" | "sku";
+
+/** Regra de preço por grupo de produtos (espelha custom_rules do motor do Allan). */
+export interface RegraPreco {
+  id: string;
+  nome: string;
+  escopo: Escopo;
+  valores: string[];
+  margemMinima: number;
+  margemAlvo: number;
+  subidaMax: number;
+  reducaoMax: number;
+  inicio: string;
+  fim: string | null;
+  prioridade: number;
+  exigeAprovacao: boolean;
+  ativa: boolean;
+  justificativa: string;
+  autor: string;
+  atualizadaEm: string;
+}
+
+/** Parâmetros das regras da base que o gestor pode deixar mais rígidos. */
+export interface ParametrosBase {
+  R02: number;
+  R03: number;
+  R06: number;
+  R07: number;
+  R08: number;
+  R10: number;
+  R11: number;
+}
+
+export const PARAMETROS_PADRAO: ParametrosBase = { R02: 0.05, R03: 0.03, R06: 48, R07: 0.05, R08: 3, R10: 0.2, R11: 15 };
+
+export type OutcomeVerdict = "improved" | "neutral" | "worsened";
+
+/** Resultado de uma mudança de preço medido depois de aplicada (na demo, simulado). */
+export interface Outcome {
+  id: string;
+  recId: string;
+  scheduleId: string;
+  origin: Agendamento["origem"];
+  oldPrice: number;
+  newPrice: number;
+  appliedAt: string;
+  measuredAt: string;
+  days: number;
+  /** Unidades por mês antes (média dos 3 últimos meses da base). */
+  unitsBefore: number;
+  /** Unidades por mês que a sensibilidade a preço previa. */
+  unitsExpected: number;
+  unitsAfter: number;
+  /** Contribuição em reais por mês, pela fórmula de margem em uso. */
+  profitBefore: number;
+  profitAfter: number;
+  verdict: OutcomeVerdict;
+  simulated: boolean;
 }

@@ -7,8 +7,10 @@ import { useEffect } from "react";
 import { MapaPreco } from "./PriceRuler";
 import { AcaoBadge, ModoBadge, RiscoBadge, SinteticoTag } from "./ui";
 import { explicar, fraseAlerta, REGRAS } from "@/lib/explain";
-import { dataBR, dataHoraBR, mesCurto, moeda, pct } from "@/lib/format";
-import { elegivelPiloto, usePricing } from "@/lib/store";
+import { dataBR, dataHoraBR, inteiro, mesCurto, moeda, pct } from "@/lib/format";
+import { profitChange, verb, VERDICT_LABEL } from "@/lib/impact";
+import { DEFAULT_MARGIN_FORMULA, MARGIN_FORMULAS, marginAt, type MarginFormula } from "@/lib/margin";
+import { usePricing } from "@/lib/store";
 import type { Recomendacao } from "@/lib/types";
 
 export function Detalhe({ r, onFechar, onAnterior, onProximo, progresso }: {
@@ -29,7 +31,7 @@ export function Detalhe({ r, onFechar, onAnterior, onProximo, progresso }: {
   }, [onFechar, onAnterior, onProximo]);
 
   const motivos = explicar(r);
-  const eleg = elegivelPiloto(r, p.piloto.teto);
+  const eleg = p.eligibility(r);
 
   return (
     <div className="fixed inset-0 z-40 flex justify-end bg-tinta/30" onClick={onFechar}>
@@ -104,6 +106,8 @@ export function Detalhe({ r, onFechar, onAnterior, onProximo, progresso }: {
               <p className="mt-2 text-suave">Fica em copiloto: {eleg.motivos.join("; ").toLowerCase()}.</p>
             )}
           </section>
+
+          <ResultadoEAprendizado r={r} />
         </div>
 
         <PainelDecisao r={r} onDecidido={() => onProximo?.()} />
@@ -112,7 +116,38 @@ export function Detalhe({ r, onFechar, onAnterior, onProximo, progresso }: {
   );
 }
 
+function ResultadoEAprendizado({ r }: { r: Recomendacao }) {
+  const p = usePricing();
+  const outcome = p.outcomes.find((o) => o.recId === r.id);
+  const learning = p.learningFor(r);
+  if (!outcome && (!learning || learning.measured + learning.decisions === 0)) return null;
+  const change = outcome ? profitChange(outcome) : null;
+  return (
+    <section className="rounded-[15px] border border-linha bg-superficie p-5 text-sm">
+      <h3 className="text-sm font-semibold">Resultado e aprendizado</h3>
+      {outcome && (
+        <p className="mt-2 text-texto">
+          Preço aplicado em {dataBR(outcome.appliedAt)}: {moeda(outcome.oldPrice)} → <strong className="text-tinta">{moeda(outcome.newPrice)}</strong>.
+          Em {outcome.days} dias, vendas de {inteiro(outcome.unitsBefore)} para {inteiro(outcome.unitsAfter)} un./mês (previsto: {inteiro(outcome.unitsExpected)})
+          e contribuição {change == null ? "sem base de comparação" : pct(change, 1, true)}: <strong className={outcome.verdict === "worsened" ? "text-piso" : outcome.verdict === "improved" ? "text-subir" : "text-tinta"}>{VERDICT_LABEL[outcome.verdict].toLowerCase()}</strong>.
+          {outcome.simulated && <span className="text-suave"> Resultado simulado.</span>}
+        </p>
+      )}
+      {learning && learning.measured + learning.decisions > 0 && (
+        <p className="mt-2 text-suave">
+          {r.categoria} · {r.canal}: {learning.measured} {learning.measured === 1 ? "mudança medida" : "mudanças medidas"} ({learning.improved} {verb(learning.improved, "melhorou", "melhoraram")}, {learning.worsened} {verb(learning.worsened, "piorou", "pioraram")}) e {learning.decisions} {verb(learning.decisions, "decisão", "decisões")} ({learning.rejected} {verb(learning.rejected, "rejeitada", "rejeitadas")}).
+          {learning.effect === "hold" && !learning.dismissed && <strong className="text-piso"> O grupo está fora do piloto automático por aprendizado.</strong>}
+          {learning.effect === "suggest" && <strong className="text-subir"> O grupo é candidato ao piloto automático.</strong>}{" "}
+          <a href="/aprendizado" className="text-roxo underline">Ver aprendizados</a>
+        </p>
+      )}
+    </section>
+  );
+}
+
 function CustoMargem({ r }: { r: Recomendacao }) {
+  const formula = r.margin_formula ?? DEFAULT_MARGIN_FORMULA;
+  const outra: MarginFormula = formula === "contribution" ? "gross" : "contribution";
   const taxa = r.preco_atual * r.custo.taxa_canal;
   const partes = [
     { n: "Reposição", v: r.custo.reposicao, c: "bg-roxo-900" },
@@ -132,19 +167,17 @@ function CustoMargem({ r }: { r: Recomendacao }) {
         {partes.map((x) => (
           <div key={x.n} className="flex justify-between"><dt className="text-suave">{x.n}</dt><dd className="num">{moeda(x.v)}</dd></div>
         ))}
-        <div className="flex justify-between font-semibold text-tinta"><dt>Margem</dt><dd className="num">{moeda(sobra)}</dd></div>
+        <div className="flex justify-between font-semibold text-tinta"><dt>Sobra</dt><dd className="num">{moeda(sobra)}</dd></div>
       </dl>
       <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
         <Mini rotulo="Atual" valor={pct(r.margem.atual)} destaque={r.margem.atual < r.margem.minima ? "text-piso" : "text-tinta"} />
         <Mini rotulo="Mínima" valor={pct(r.margem.minima)} />
         <Mini rotulo="Alvo" valor={pct(r.margem.alvo)} />
       </div>
-      {r.margem.simples_reposicao != null && (
-        <p className="mt-3 text-xs text-suave">
-          Só sobre o custo de reposição (a conta usada no deck da Semana 2), a margem seria {pct(r.margem.simples_reposicao)}.{" "}
-          <a href="/regras#margem" className="text-roxo underline">Por que isso importa</a>
-        </p>
-      )}
+      <p className="mt-3 text-xs text-suave">
+        Margem em uso: {MARGIN_FORMULAS[formula].label.toLowerCase()}. Pela {MARGIN_FORMULAS[outra].label.toLowerCase()}, seria {pct(marginAt(r, r.preco_atual, outra))}.{" "}
+        <a href="/regras#margem" className="text-roxo underline">Por que isso importa</a>
+      </p>
     </section>
   );
 }

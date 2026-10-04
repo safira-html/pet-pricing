@@ -1,0 +1,1446 @@
+{
+ "oficial": {
+  "PP-0001|E-commerce": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 4.37,
+   "preco_minimo": 4.0
+  },
+  "PP-0001|Loja física": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 4.38,
+   "preco_minimo": 4.0
+  },
+  "PP-0001|Marketplace": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 4.37,
+   "preco_minimo": 4.0
+  },
+  "PP-0006|E-commerce": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 52.8,
+   "preco_minimo": 48.69
+  },
+  "PP-0006|Loja física": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 52.8,
+   "preco_minimo": 48.69
+  },
+  "PP-0006|Marketplace": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 52.8,
+   "preco_minimo": 48.69
+  },
+  "PP-0011|E-commerce": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 100.28,
+   "preco_minimo": 93.38
+  },
+  "PP-0011|Loja física": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 100.31,
+   "preco_minimo": 93.38
+  },
+  "PP-0011|Marketplace": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 101.1,
+   "preco_minimo": 93.38
+  },
+  "PP-0014|E-commerce": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 146.66,
+   "preco_minimo": 133.55
+  },
+  "PP-0014|Loja física": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 146.66,
+   "preco_minimo": 133.55
+  },
+  "PP-0014|Marketplace": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 146.66,
+   "preco_minimo": 133.55
+  },
+  "PP-0016|E-commerce": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 149.13,
+   "preco_minimo": 138.07
+  },
+  "PP-0016|Loja física": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 149.13,
+   "preco_minimo": 138.07
+  },
+  "PP-0016|Marketplace": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 149.49,
+   "preco_minimo": 138.07
+  },
+  "PP-0002|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 14.51,
+   "preco_minimo": 13.27
+  },
+  "PP-0002|Loja física": {
+   "acao": "MANTER",
+   "risco": "Baixo",
+   "preco_sugerido": 14.58,
+   "preco_minimo": 13.27
+  },
+  "PP-0002|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 14.51,
+   "preco_minimo": 13.27
+  },
+  "PP-0003|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 25.98,
+   "preco_minimo": 23.34
+  },
+  "PP-0003|Loja física": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 25.98,
+   "preco_minimo": 23.34
+  },
+  "PP-0003|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 25.98,
+   "preco_minimo": 23.34
+  },
+  "PP-0004|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 37.81,
+   "preco_minimo": 34.24
+  },
+  "PP-0004|Loja física": {
+   "acao": "MANTER",
+   "risco": "Baixo",
+   "preco_sugerido": 37.92,
+   "preco_minimo": 34.24
+  },
+  "PP-0004|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 37.81,
+   "preco_minimo": 34.24
+  },
+  "PP-0005|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 50.17,
+   "preco_minimo": 45.43
+  },
+  "PP-0005|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 50.17,
+   "preco_minimo": 45.43
+  },
+  "PP-0005|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 50.17,
+   "preco_minimo": 45.43
+  },
+  "PP-0007|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 64.58,
+   "preco_minimo": 59.11
+  },
+  "PP-0007|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 64.58,
+   "preco_minimo": 59.11
+  },
+  "PP-0007|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 64.58,
+   "preco_minimo": 59.11
+  },
+  "PP-0008|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 78.87,
+   "preco_minimo": 71.0
+  },
+  "PP-0008|Loja física": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 78.87,
+   "preco_minimo": 71.0
+  },
+  "PP-0008|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 78.87,
+   "preco_minimo": 71.0
+  },
+  "PP-0009|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 92.26,
+   "preco_minimo": 83.89
+  },
+  "PP-0009|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 92.26,
+   "preco_minimo": 83.89
+  },
+  "PP-0009|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 92.26,
+   "preco_minimo": 83.89
+  },
+  "PP-0010|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 107.43,
+   "preco_minimo": 96.5
+  },
+  "PP-0010|Loja física": {
+   "acao": "MANTER",
+   "risco": "Baixo",
+   "preco_sugerido": 107.22,
+   "preco_minimo": 96.5
+  },
+  "PP-0010|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 107.43,
+   "preco_minimo": 96.5
+  },
+  "PP-0012|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 114.38,
+   "preco_minimo": 104.94
+  },
+  "PP-0012|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 114.38,
+   "preco_minimo": 104.94
+  },
+  "PP-0012|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 114.38,
+   "preco_minimo": 104.94
+  },
+  "PP-0013|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Médio",
+   "preco_sugerido": 132.4,
+   "preco_minimo": 118.67
+  },
+  "PP-0013|Loja física": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 132.4,
+   "preco_minimo": 118.67
+  },
+  "PP-0013|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 132.4,
+   "preco_minimo": 118.67
+  },
+  "PP-0015|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 161.66,
+   "preco_minimo": 147.58
+  },
+  "PP-0015|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 161.66,
+   "preco_minimo": 147.58
+  },
+  "PP-0015|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 162.01,
+   "preco_minimo": 147.58
+  },
+  "PP-0021|E-commerce": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 7.54,
+   "preco_minimo": 6.88
+  },
+  "PP-0021|Loja física": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 7.53,
+   "preco_minimo": 6.88
+  },
+  "PP-0021|Marketplace": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 7.54,
+   "preco_minimo": 6.88
+  },
+  "PP-0026|E-commerce": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 56.57,
+   "preco_minimo": 51.57
+  },
+  "PP-0026|Loja física": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 56.51,
+   "preco_minimo": 51.57
+  },
+  "PP-0026|Marketplace": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 56.57,
+   "preco_minimo": 51.57
+  },
+  "PP-0031|E-commerce": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 104.31,
+   "preco_minimo": 96.25
+  },
+  "PP-0031|Loja física": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 104.31,
+   "preco_minimo": 96.25
+  },
+  "PP-0031|Marketplace": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 104.31,
+   "preco_minimo": 96.25
+  },
+  "PP-0036|E-commerce": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 153.93,
+   "preco_minimo": 140.94
+  },
+  "PP-0036|Loja física": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 154.45,
+   "preco_minimo": 140.94
+  },
+  "PP-0036|Marketplace": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 153.93,
+   "preco_minimo": 140.94
+  },
+  "PP-0017|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 166.59,
+   "preco_minimo": 150.77
+  },
+  "PP-0017|Loja física": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 166.59,
+   "preco_minimo": 150.77
+  },
+  "PP-0017|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 166.59,
+   "preco_minimo": 150.77
+  },
+  "PP-0018|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 181.05,
+   "preco_minimo": 166.34
+  },
+  "PP-0018|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 181.05,
+   "preco_minimo": 166.34
+  },
+  "PP-0018|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 181.26,
+   "preco_minimo": 166.34
+  },
+  "PP-0019|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 200.27,
+   "preco_minimo": 183.2
+  },
+  "PP-0019|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 200.27,
+   "preco_minimo": 183.2
+  },
+  "PP-0019|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 200.49,
+   "preco_minimo": 183.2
+  },
+  "PP-0020|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 218.25,
+   "preco_minimo": 198.65
+  },
+  "PP-0020|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 218.25,
+   "preco_minimo": 198.65
+  },
+  "PP-0020|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 218.25,
+   "preco_minimo": 198.65
+  },
+  "PP-0022|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 17.64,
+   "preco_minimo": 16.22
+  },
+  "PP-0022|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 17.64,
+   "preco_minimo": 16.22
+  },
+  "PP-0022|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 17.64,
+   "preco_minimo": 16.22
+  },
+  "PP-0023|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 28.85,
+   "preco_minimo": 26.4
+  },
+  "PP-0023|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 28.85,
+   "preco_minimo": 26.4
+  },
+  "PP-0023|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 28.85,
+   "preco_minimo": 26.4
+  },
+  "PP-0024|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 41.93,
+   "preco_minimo": 37.44
+  },
+  "PP-0024|Loja física": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 41.93,
+   "preco_minimo": 37.44
+  },
+  "PP-0024|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 41.93,
+   "preco_minimo": 37.44
+  },
+  "PP-0025|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 53.98,
+   "preco_minimo": 48.72
+  },
+  "PP-0025|Loja física": {
+   "acao": "MANTER",
+   "risco": "Baixo",
+   "preco_sugerido": 54.13,
+   "preco_minimo": 48.72
+  },
+  "PP-0025|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 53.98,
+   "preco_minimo": 48.72
+  },
+  "PP-0027|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 67.59,
+   "preco_minimo": 62.06
+  },
+  "PP-0027|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 67.59,
+   "preco_minimo": 62.06
+  },
+  "PP-0027|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 67.59,
+   "preco_minimo": 62.06
+  },
+  "PP-0028|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 80.99,
+   "preco_minimo": 74.07
+  },
+  "PP-0028|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 80.99,
+   "preco_minimo": 74.07
+  },
+  "PP-0028|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 80.99,
+   "preco_minimo": 74.07
+  },
+  "PP-0029|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 95.86,
+   "preco_minimo": 87.09
+  },
+  "PP-0029|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 95.86,
+   "preco_minimo": 87.09
+  },
+  "PP-0029|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 95.86,
+   "preco_minimo": 87.09
+  },
+  "PP-0030|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 110.26,
+   "preco_minimo": 99.79
+  },
+  "PP-0030|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 110.26,
+   "preco_minimo": 99.79
+  },
+  "PP-0030|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 110.26,
+   "preco_minimo": 99.79
+  },
+  "PP-0032|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 118.36,
+   "preco_minimo": 107.89
+  },
+  "PP-0032|Loja física": {
+   "acao": "MANTER",
+   "risco": "Baixo",
+   "preco_sugerido": 118.52,
+   "preco_minimo": 107.89
+  },
+  "PP-0032|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 118.36,
+   "preco_minimo": 107.89
+  },
+  "PP-0033|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 133.07,
+   "preco_minimo": 121.74
+  },
+  "PP-0033|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 133.07,
+   "preco_minimo": 121.74
+  },
+  "PP-0033|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 133.07,
+   "preco_minimo": 121.74
+  },
+  "PP-0034|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 150.48,
+   "preco_minimo": 136.74
+  },
+  "PP-0034|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 150.48,
+   "preco_minimo": 136.74
+  },
+  "PP-0034|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 150.48,
+   "preco_minimo": 136.74
+  },
+  "PP-0035|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 166.53,
+   "preco_minimo": 150.86
+  },
+  "PP-0035|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 166.53,
+   "preco_minimo": 150.86
+  },
+  "PP-0035|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 166.53,
+   "preco_minimo": 150.86
+  },
+  "PP-0037|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 166.78,
+   "preco_minimo": 153.72
+  },
+  "PP-0037|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 166.78,
+   "preco_minimo": 153.72
+  },
+  "PP-0037|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 166.84,
+   "preco_minimo": 153.72
+  },
+  "PP-0038|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 185.87,
+   "preco_minimo": 169.4
+  },
+  "PP-0038|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 185.87,
+   "preco_minimo": 169.4
+  },
+  "PP-0038|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 185.87,
+   "preco_minimo": 169.4
+  },
+  "PP-0039|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 203.44,
+   "preco_minimo": 186.39
+  },
+  "PP-0039|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 203.44,
+   "preco_minimo": 186.39
+  },
+  "PP-0039|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 203.99,
+   "preco_minimo": 186.39
+  },
+  "PP-0040|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 227.1,
+   "preco_minimo": 201.93
+  },
+  "PP-0040|Loja física": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 227.1,
+   "preco_minimo": 201.93
+  },
+  "PP-0040|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 227.1,
+   "preco_minimo": 201.93
+  }
+ },
+ "sintetico": {
+  "PP-0001|E-commerce": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 4.37,
+   "preco_minimo": 4.0
+  },
+  "PP-0001|Loja física": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 4.38,
+   "preco_minimo": 4.0
+  },
+  "PP-0001|Marketplace": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 4.37,
+   "preco_minimo": 4.0
+  },
+  "PP-0006|E-commerce": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 52.8,
+   "preco_minimo": 48.69
+  },
+  "PP-0006|Loja física": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 52.8,
+   "preco_minimo": 48.69
+  },
+  "PP-0006|Marketplace": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 52.8,
+   "preco_minimo": 48.69
+  },
+  "PP-0011|E-commerce": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 100.28,
+   "preco_minimo": 93.38
+  },
+  "PP-0011|Loja física": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 100.31,
+   "preco_minimo": 93.38
+  },
+  "PP-0011|Marketplace": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 101.1,
+   "preco_minimo": 93.38
+  },
+  "PP-0014|E-commerce": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 146.66,
+   "preco_minimo": 133.55
+  },
+  "PP-0014|Loja física": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 146.66,
+   "preco_minimo": 133.55
+  },
+  "PP-0014|Marketplace": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 146.66,
+   "preco_minimo": 133.55
+  },
+  "PP-0016|E-commerce": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 149.13,
+   "preco_minimo": 138.07
+  },
+  "PP-0016|Loja física": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 149.13,
+   "preco_minimo": 138.07
+  },
+  "PP-0016|Marketplace": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 149.49,
+   "preco_minimo": 138.07
+  },
+  "PP-0002|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 14.51,
+   "preco_minimo": 13.27
+  },
+  "PP-0002|Loja física": {
+   "acao": "MANTER",
+   "risco": "Baixo",
+   "preco_sugerido": 14.58,
+   "preco_minimo": 13.27
+  },
+  "PP-0002|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 14.51,
+   "preco_minimo": 13.27
+  },
+  "PP-0003|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 25.98,
+   "preco_minimo": 23.34
+  },
+  "PP-0003|Loja física": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 25.98,
+   "preco_minimo": 23.34
+  },
+  "PP-0003|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 25.98,
+   "preco_minimo": 23.34
+  },
+  "PP-0004|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 37.81,
+   "preco_minimo": 34.24
+  },
+  "PP-0004|Loja física": {
+   "acao": "MANTER",
+   "risco": "Baixo",
+   "preco_sugerido": 37.92,
+   "preco_minimo": 34.24
+  },
+  "PP-0004|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 37.81,
+   "preco_minimo": 34.24
+  },
+  "PP-0005|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 50.17,
+   "preco_minimo": 45.43
+  },
+  "PP-0005|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 50.17,
+   "preco_minimo": 45.43
+  },
+  "PP-0005|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 50.17,
+   "preco_minimo": 45.43
+  },
+  "PP-0007|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 64.58,
+   "preco_minimo": 59.11
+  },
+  "PP-0007|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 64.58,
+   "preco_minimo": 59.11
+  },
+  "PP-0007|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 64.58,
+   "preco_minimo": 59.11
+  },
+  "PP-0008|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 78.87,
+   "preco_minimo": 71.0
+  },
+  "PP-0008|Loja física": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 78.87,
+   "preco_minimo": 71.0
+  },
+  "PP-0008|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 78.87,
+   "preco_minimo": 71.0
+  },
+  "PP-0009|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 92.26,
+   "preco_minimo": 83.89
+  },
+  "PP-0009|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 92.26,
+   "preco_minimo": 83.89
+  },
+  "PP-0009|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 92.26,
+   "preco_minimo": 83.89
+  },
+  "PP-0010|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 107.43,
+   "preco_minimo": 96.5
+  },
+  "PP-0010|Loja física": {
+   "acao": "MANTER",
+   "risco": "Baixo",
+   "preco_sugerido": 107.22,
+   "preco_minimo": 96.5
+  },
+  "PP-0010|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 107.43,
+   "preco_minimo": 96.5
+  },
+  "PP-0012|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 114.38,
+   "preco_minimo": 104.94
+  },
+  "PP-0012|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 114.38,
+   "preco_minimo": 104.94
+  },
+  "PP-0012|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 114.38,
+   "preco_minimo": 104.94
+  },
+  "PP-0013|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Médio",
+   "preco_sugerido": 132.4,
+   "preco_minimo": 118.67
+  },
+  "PP-0013|Loja física": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 132.4,
+   "preco_minimo": 118.67
+  },
+  "PP-0013|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 132.4,
+   "preco_minimo": 118.67
+  },
+  "PP-0015|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 161.66,
+   "preco_minimo": 147.58
+  },
+  "PP-0015|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 161.66,
+   "preco_minimo": 147.58
+  },
+  "PP-0015|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 162.01,
+   "preco_minimo": 147.58
+  },
+  "PP-0021|E-commerce": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 7.54,
+   "preco_minimo": 6.88
+  },
+  "PP-0021|Loja física": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 7.53,
+   "preco_minimo": 6.88
+  },
+  "PP-0021|Marketplace": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 7.54,
+   "preco_minimo": 6.88
+  },
+  "PP-0026|E-commerce": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 56.57,
+   "preco_minimo": 51.57
+  },
+  "PP-0026|Loja física": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 56.51,
+   "preco_minimo": 51.57
+  },
+  "PP-0026|Marketplace": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 56.57,
+   "preco_minimo": 51.57
+  },
+  "PP-0031|E-commerce": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 104.31,
+   "preco_minimo": 96.25
+  },
+  "PP-0031|Loja física": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 104.31,
+   "preco_minimo": 96.25
+  },
+  "PP-0031|Marketplace": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 104.31,
+   "preco_minimo": 96.25
+  },
+  "PP-0036|E-commerce": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 153.93,
+   "preco_minimo": 140.94
+  },
+  "PP-0036|Loja física": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 154.45,
+   "preco_minimo": 140.94
+  },
+  "PP-0036|Marketplace": {
+   "acao": "REVISAR",
+   "risco": "Alto",
+   "preco_sugerido": 153.93,
+   "preco_minimo": 140.94
+  },
+  "PP-0017|E-commerce": {
+   "acao": "MANTER",
+   "risco": "Baixo",
+   "preco_sugerido": 162.32,
+   "preco_minimo": 141.77
+  },
+  "PP-0017|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 161.65,
+   "preco_minimo": 141.77
+  },
+  "PP-0017|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 163.65,
+   "preco_minimo": 141.77
+  },
+  "PP-0018|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 181.05,
+   "preco_minimo": 166.34
+  },
+  "PP-0018|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 181.05,
+   "preco_minimo": 166.34
+  },
+  "PP-0018|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 181.26,
+   "preco_minimo": 166.34
+  },
+  "PP-0019|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 200.27,
+   "preco_minimo": 183.2
+  },
+  "PP-0019|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 200.27,
+   "preco_minimo": 183.2
+  },
+  "PP-0019|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 200.49,
+   "preco_minimo": 183.2
+  },
+  "PP-0020|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 218.25,
+   "preco_minimo": 198.65
+  },
+  "PP-0020|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 218.25,
+   "preco_minimo": 198.65
+  },
+  "PP-0020|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 218.25,
+   "preco_minimo": 198.65
+  },
+  "PP-0022|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 17.64,
+   "preco_minimo": 16.22
+  },
+  "PP-0022|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 17.64,
+   "preco_minimo": 16.22
+  },
+  "PP-0022|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 17.64,
+   "preco_minimo": 16.22
+  },
+  "PP-0023|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 28.85,
+   "preco_minimo": 26.4
+  },
+  "PP-0023|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 28.85,
+   "preco_minimo": 26.4
+  },
+  "PP-0023|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 28.85,
+   "preco_minimo": 26.4
+  },
+  "PP-0024|E-commerce": {
+   "acao": "MANTER",
+   "risco": "Baixo",
+   "preco_sugerido": 40.63,
+   "preco_minimo": 34.84
+  },
+  "PP-0024|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 40.49,
+   "preco_minimo": 34.84
+  },
+  "PP-0024|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 40.97,
+   "preco_minimo": 34.84
+  },
+  "PP-0025|E-commerce": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 50.4,
+   "preco_minimo": 40.88
+  },
+  "PP-0025|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 51.43,
+   "preco_minimo": 40.88
+  },
+  "PP-0025|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 53.49,
+   "preco_minimo": 40.88
+  },
+  "PP-0027|E-commerce": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 63.47,
+   "preco_minimo": 52.71
+  },
+  "PP-0027|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 64.77,
+   "preco_minimo": 52.71
+  },
+  "PP-0027|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 67.36,
+   "preco_minimo": 52.71
+  },
+  "PP-0028|E-commerce": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 77.4,
+   "preco_minimo": 67.58
+  },
+  "PP-0028|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 77.61,
+   "preco_minimo": 67.58
+  },
+  "PP-0028|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 80.72,
+   "preco_minimo": 67.58
+  },
+  "PP-0029|E-commerce": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 91.43,
+   "preco_minimo": 79.09
+  },
+  "PP-0029|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 91.64,
+   "preco_minimo": 79.09
+  },
+  "PP-0029|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 95.31,
+   "preco_minimo": 79.09
+  },
+  "PP-0030|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 110.26,
+   "preco_minimo": 99.79
+  },
+  "PP-0030|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 110.26,
+   "preco_minimo": 99.79
+  },
+  "PP-0030|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 110.26,
+   "preco_minimo": 99.79
+  },
+  "PP-0032|E-commerce": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 112.39,
+   "preco_minimo": 97.03
+  },
+  "PP-0032|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 112.6,
+   "preco_minimo": 97.03
+  },
+  "PP-0032|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 117.1,
+   "preco_minimo": 97.03
+  },
+  "PP-0033|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 133.07,
+   "preco_minimo": 121.74
+  },
+  "PP-0033|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 133.07,
+   "preco_minimo": 121.74
+  },
+  "PP-0033|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 133.07,
+   "preco_minimo": 121.74
+  },
+  "PP-0034|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 150.48,
+   "preco_minimo": 136.74
+  },
+  "PP-0034|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 150.48,
+   "preco_minimo": 136.74
+  },
+  "PP-0034|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 150.48,
+   "preco_minimo": 136.74
+  },
+  "PP-0035|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 166.53,
+   "preco_minimo": 150.86
+  },
+  "PP-0035|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 166.53,
+   "preco_minimo": 150.86
+  },
+  "PP-0035|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 166.53,
+   "preco_minimo": 150.86
+  },
+  "PP-0037|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 166.78,
+   "preco_minimo": 153.72
+  },
+  "PP-0037|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 166.78,
+   "preco_minimo": 153.72
+  },
+  "PP-0037|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 166.84,
+   "preco_minimo": 153.72
+  },
+  "PP-0038|E-commerce": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 173.95,
+   "preco_minimo": 142.87
+  },
+  "PP-0038|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 177.5,
+   "preco_minimo": 142.87
+  },
+  "PP-0038|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 184.6,
+   "preco_minimo": 142.87
+  },
+  "PP-0039|E-commerce": {
+   "acao": "SUBIR",
+   "risco": "Baixo",
+   "preco_sugerido": 203.44,
+   "preco_minimo": 186.39
+  },
+  "PP-0039|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 203.44,
+   "preco_minimo": 186.39
+  },
+  "PP-0039|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 203.99,
+   "preco_minimo": 186.39
+  },
+  "PP-0040|E-commerce": {
+   "acao": "MANTER",
+   "risco": "Baixo",
+   "preco_sugerido": 219.88,
+   "preco_minimo": 187.58
+  },
+  "PP-0040|Loja física": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 219.13,
+   "preco_minimo": 187.58
+  },
+  "PP-0040|Marketplace": {
+   "acao": "BAIXAR",
+   "risco": "Médio",
+   "preco_sugerido": 221.68,
+   "preco_minimo": 187.58
+  }
+ }
+}
