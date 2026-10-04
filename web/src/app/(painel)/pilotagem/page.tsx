@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Select } from "@/components/Select";
 import { AcaoBadge, Botao, Card, Confirmar, SinteticoTag, Titulo, Vazio } from "@/components/ui";
-import { moeda, pct } from "@/lib/format";
+import { dataHoraBR, moeda, pct } from "@/lib/format";
 import { cobre, descreverRegra, usePricing } from "@/lib/store";
 import type { Canal, Recomendacao, RegraPiloto } from "@/lib/types";
 
@@ -35,7 +35,6 @@ export default function Pilotagem() {
   const [removendo, setRemovendo] = useState<string | null>(null);
   const [limpando, setLimpando] = useState(false);
   const holds = p.learnings.filter((l) => l.effect === "hold" && !l.dismissed);
-  const [msg, setMsg] = useState<string | null>(null);
   const [nova, setNova] = useState<Pick<RegraPiloto, "curva" | "canal" | "categoria">>({ curva: null, canal: null, categoria: null });
 
   const categorias = useMemo(() => [...new Set(p.recs.map((r) => r.categoria))].sort(), [p.recs]);
@@ -70,7 +69,7 @@ export default function Pilotagem() {
           <div className="flex items-center justify-between gap-4 rounded-[12px] border border-linha p-4">
             <div>
               <p className="font-semibold text-tinta">Piloto automático {p.piloto.ligado ? "ligado" : "desligado"}</p>
-              <p className="text-sm text-suave">{p.piloto.ligado ? "Itens cobertos pelas regras podem mudar de preço sozinhos." : "Nenhum item muda de preço sozinho, mesmo coberto por regra."}</p>
+              <p className="text-sm text-suave">{p.piloto.ligado ? "Agenda sozinho os itens cobertos que passam pelas proteções, com tempo para veto." : "Nenhum item muda de preço sozinho, mesmo coberto por regra."}</p>
             </div>
             <button role="switch" aria-checked={p.piloto.ligado} aria-label="Ligar piloto automático" disabled={!gestor}
               onClick={() => p.configurarPiloto({ ligado: !p.piloto.ligado })}
@@ -163,19 +162,24 @@ export default function Pilotagem() {
       </div>
 
       <Card>
-        <Titulo eyebrow="Prévia" acao={
-          <Botao disabled={!gestor || !p.piloto.ligado || !previa.length} onClick={() => { const n = p.rodarPiloto(); setMsg(n ? `${n} ${n === 1 ? "mudança agendada. Ela está" : "mudanças agendadas. Elas estão"} na fila de veto abaixo.` : null); }}>
-            <CalendarClock size={16} /> Agendar mudanças
-          </Botao>
-        }>
-          O que o piloto automático faria agora
+        <Titulo eyebrow={p.piloto.ligado ? "Agendamento automático" : "Prévia"}>
+          {p.piloto.ligado ? "O piloto agenda sozinho" : "O que o piloto agendaria ao ligar"}
         </Titulo>
-        <p className="text-sm text-suave">{emAuto.length} {emAuto.length === 1 ? "item" : "itens"} em piloto automático · {previa.length} {previa.length === 1 ? "pronto" : "prontos"} para agendar</p>
-        {!p.piloto.ligado && emAuto.length > 0 && <p className="mt-2 text-sm text-revisar">Ligue o piloto automático para agendar.</p>}
-        {msg && <p className="mt-2 rounded-[10px] bg-limao-100 px-3 py-2 text-sm text-limao-700">{msg}</p>}
-        {previa.length === 0 ? (
+        <p className="text-sm text-suave">
+          {emAuto.length} {emAuto.length === 1 ? "item" : "itens"} em piloto automático
+          {p.piloto.ligado
+            ? ". Sempre que um deles passa pelas proteções, a mudança é agendada na hora e vai para a fila de veto abaixo; na fila de decisões, o item aparece como decidido pelo piloto."
+            : ` · ${previa.length} ${previa.length === 1 ? "seria agendado" : "seriam agendados"} assim que você ligar a chave.`}
+        </p>
+        {p.piloto.ligado && p.ultimaExecucaoPiloto && (
+          <p className="mt-3 inline-flex items-center gap-2 rounded-[10px] bg-limao-100 px-3 py-2 text-sm text-limao-700">
+            <CalendarClock size={16} aria-hidden />
+            Última execução: {dataHoraBR(p.ultimaExecucaoPiloto.quando)}, {p.ultimaExecucaoPiloto.n} {p.ultimaExecucaoPiloto.n === 1 ? "mudança agendada" : "mudanças agendadas"}.
+          </p>
+        )}
+        {!p.piloto.ligado && (previa.length === 0 ? (
           <div className="mt-4">
-            <Vazio titulo="Nada para agendar">
+            <Vazio titulo="Nada seria agendado">
               {emAuto.length === 0
                 ? "Crie uma regra de grupo acima para colocar itens em piloto automático."
                 : p.cenario === "oficial"
@@ -192,6 +196,13 @@ export default function Pilotagem() {
               </li>
             ))}
           </ul>
+        ))}
+        {p.piloto.ligado && emAuto.length > 0 && previa.length === 0 && !veto.length && (
+          <p className="mt-3 text-sm text-suave">
+            {p.cenario === "oficial"
+              ? "Na base oficial, nenhum item coberto passa pelas proteções: todos têm alguma regra que pede uma pessoa."
+              : "Nenhum item coberto passa pelas proteções agora. Aumente a variação máxima ou crie outra regra."}
+          </p>
         )}
       </Card>
 
@@ -199,7 +210,7 @@ export default function Pilotagem() {
         <Titulo eyebrow="Fila de veto">Mudanças automáticas aguardando</Titulo>
         {veto.length === 0 ? (
           <Vazio titulo="Nenhuma mudança aguardando veto">
-            Quando o piloto automático agendar uma mudança, ela aparece aqui com contagem regressiva e qualquer analista pode vetar. Para agendar, ligue o piloto, crie uma regra de grupo e use “Agendar mudanças” na prévia.
+            Quando o piloto automático agendar uma mudança, ela aparece aqui com contagem regressiva e qualquer analista pode vetar. Para isso, ligue o piloto e crie uma regra de grupo: o agendamento é automático.
           </Vazio>
         ) : (
           <ul className="divide-y divide-linha text-sm">

@@ -30,7 +30,7 @@ const TRILHA = [
   { titulo: "Comparar as fórmulas de margem", texto: "Em Regras e margem, veja como a escolha entre contribuição e margem bruta muda o resultado.", href: "/regras#margem" },
   { titulo: "Trocar para os cenários sintéticos", texto: "Use o botão abaixo. Aparecem itens para baixar e manter.", href: "/base" },
   { titulo: "Aprovar em um clique", texto: "No grupo Aprovação rápida, aprove o sachê da loja física e veja o aviso com Desfazer.", href: "/fila?grupo=rapida" },
-  { titulo: "Ligar o piloto automático", texto: "Em Pilotagem, ligue a chave, suba o teto para 4%, crie a regra “curva B em qualquer canal” e agende. Depois vete uma das mudanças.", href: "/pilotagem" },
+  { titulo: "Ligar o piloto automático", texto: "Em Pilotagem, ligue a chave, suba o teto para 4% e crie a regra “curva B em qualquer canal”: o piloto agenda sozinho. Depois vete uma das mudanças.", href: "/pilotagem" },
   { titulo: "Medir o impacto", texto: "Em Impacto e aprendizado, simule 30 dias: cada mudança mostra vendas e contribuição antes e depois.", href: "/aprendizado" },
   { titulo: "Ver o aprendizado agir", texto: "Grupos em que as mudanças pioraram a contribuição saem do piloto automático sozinhos.", href: "/aprendizado" },
   { titulo: "Mostrar como entra na operação", texto: "Em Integrações, as fontes da Popular Pet e o arquivo de preços aprovados para o ERP.", href: "/integrations" },

@@ -58,6 +58,8 @@ interface Estado {
   outcomes: Outcome[];
   /** Aprendizados que o gestor decidiu não aplicar ao piloto automático. */
   dismissedLearnings: string[];
+  /** Última vez que o piloto agendou mudanças sozinho. */
+  ultimaExecucaoPiloto: { quando: string; n: number } | null;
 }
 
 const INICIAL: Estado = {
@@ -78,6 +80,7 @@ const INICIAL: Estado = {
   marginFormula: DEFAULT_MARGIN_FORMULA,
   outcomes: [],
   dismissedLearnings: [],
+  ultimaExecucaoPiloto: null,
 };
 
 const AVISO: Record<TipoDecisao, string> = { aprovar: "Aprovada", editar: "Ajustada", rejeitar: "Rejeitada", revisar: "Em revisão", etapa_rampa: "1ª etapa aprovada" };
@@ -152,7 +155,7 @@ interface Ctx extends Estado {
   simulateMeasurement: () => number;
   dismissLearning: (key: string, reason: string) => void;
   restoreLearning: (key: string) => void;
-  rodarPiloto: () => number;
+
   desfazer: () => void;
   fecharAviso: () => void;
 }
@@ -426,6 +429,50 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
     }
   };
 
+  /**
+   * Piloto automático: com a chave ligada, agenda sozinho todo item coberto por regra de grupo
+   * que passa pelas proteções. Roda ao ligar, ao criar ou mudar regra e quando entra base nova.
+   */
+  const executarPiloto = useCallback((ids: string[]) => {
+    const aplica = new Date(Date.now() + estado.piloto.janelaVetoHoras * 3600 * 1000).toISOString();
+    let agendados = 0;
+    setEstado((s) => {
+      // Confere de novo dentro da atualização, para não agendar o mesmo item duas vezes.
+      const livres = ids.map((id) => porId.get(id)).filter((r): r is Recomendacao =>
+        !!r && r.preco_sugerido != null && !s.decisoes.some((d) => d.recId === r.id) && !s.agendamentos.some((a) => a.recId === r.id));
+      agendados = livres.length;
+      if (!livres.length) return s;
+      return {
+        ...s,
+        decisoes: [
+          ...livres.map<Decisao>((r) => ({
+            id: uid(), recId: r.id, tipo: "aprovar", preco: r.preco_sugerido, justificativa: "Dentro das proteções do piloto automático.",
+            autor: "Piloto automático", perfil: "sistema", quando: agora(), segundosAteDecidir: 0, agendadoPara: aplica,
+          })),
+          ...s.decisoes,
+        ],
+        agendamentos: [
+          ...livres.map<Agendamento>((r) => ({
+            id: uid(), recId: r.id, preco: r.preco_sugerido!, origem: "piloto automático", criadoEm: agora(), aplicaEm: aplica, status: "aguardando veto",
+          })),
+          ...s.agendamentos,
+        ],
+        ultimaExecucaoPiloto: { quando: agora(), n: livres.length },
+      };
+    });
+    const n = ids.filter((id) => !estado.decisoes.some((d) => d.recId === id) && !estado.agendamentos.some((x) => x.recId === id)).length;
+    if (n) registrar({ autor: "Piloto automático", tipo: "piloto automático", texto: `agendou ${n} ${n === 1 ? "mudança" : "mudanças"} sozinho, com ${estado.piloto.janelaVetoHoras} h para veto.` });
+    return agendados;
+  }, [estado.piloto.janelaVetoHoras, estado.decisoes, estado.agendamentos, porId, registrar]);
+
+  useEffect(() => {
+    if (!carregado || !estado.perfil || !estado.piloto.ligado) return;
+    const alvo = previaPiloto();
+    if (!alvo.length) return;
+    const t = setTimeout(() => executarPiloto(alvo.map((r) => r.id)), 400);
+    return () => clearTimeout(t);
+  }, [carregado, estado.perfil, estado.piloto.ligado, previaPiloto, executarPiloto]);
+
   const valor: Ctx = useMemo(
     () => ({
       ...estado,
@@ -596,30 +643,6 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
         registrar({ autor, tipo: "decisão", texto: av.recIds.length === 1 ? `desfez a decisão de ${av.recIds[0].replace("|", " · ")}.` : `desfez ${av.recIds.length} decisões.` });
       },
       fecharAviso,
-      rodarPiloto: () => {
-        if (!estado.piloto.ligado) return 0;
-        const alvo = previaPiloto();
-        if (!alvo.length) return 0;
-        const aplica = new Date(Date.now() + estado.piloto.janelaVetoHoras * 3600 * 1000).toISOString();
-        setEstado((s) => ({
-          ...s,
-          decisoes: [
-            ...alvo.map<Decisao>((r) => ({
-              id: uid(), recId: r.id, tipo: "aprovar", preco: r.preco_sugerido, justificativa: "Dentro das travas do piloto automático.",
-              autor: "Piloto automático", perfil: "sistema", quando: agora(), segundosAteDecidir: 0, agendadoPara: aplica,
-            })),
-            ...s.decisoes,
-          ],
-          agendamentos: [
-            ...alvo.map<Agendamento>((r) => ({
-              id: uid(), recId: r.id, preco: r.preco_sugerido!, origem: "piloto automático", criadoEm: agora(), aplicaEm: aplica, status: "aguardando veto",
-            })),
-            ...s.agendamentos,
-          ],
-        }));
-        registrar({ autor: "Piloto automático", tipo: "piloto automático", texto: `agendou ${alvo.length} ${alvo.length === 1 ? "mudança" : "mudanças"}, com ${estado.piloto.janelaVetoHoras} h para veto.` });
-        return alvo.length;
-      },
     }),
     [estado, base, recs, carregado, pode, modoDe, previaPiloto, registrar, autor, regraCobre, eligibility, learnings, learningFor, elasticity, porId, fecharAviso, statusApi, sessaoId, basesRemotas],
   );

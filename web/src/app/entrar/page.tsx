@@ -42,15 +42,8 @@ export default function Entrar() {
           <div aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(120%_80%_at_0%_0%,#8a62b8_0%,transparent_55%),radial-gradient(90%_70%_at_100%_100%,#5a3580_0%,transparent_60%),linear-gradient(160deg,#764ea0_0%,#3d2358_100%)]" />
           <div aria-hidden className="absolute -right-24 -bottom-24 -z-10 size-80 rounded-full bg-limao/25 blur-3xl" />
 
-          <span className="inline-flex w-fit shrink-0 rounded-[10px] bg-white px-3 py-2 shadow-sm">
-            <Image src="/logo-popular-pet.png" alt="Popular Pet" width={112} height={27} priority />
-          </span>
-
           <div className="flex min-h-0 flex-1 flex-col justify-center py-5">
-            <span className="inline-flex w-fit items-center gap-2 rounded-full bg-white/12 px-3 py-1 text-sm font-medium text-white ring-1 ring-white/20 backdrop-blur">
-              <span className="size-2 rounded-full bg-limao" aria-hidden /> Pet Pricing · copiloto de precificação
-            </span>
-            <h1 className="mt-4 max-w-lg font-display text-[clamp(26px,4.4vh,38px)] leading-[1.12] font-semibold text-white">
+            <h1 className="max-w-lg font-display text-[clamp(26px,4.4vh,38px)] leading-[1.12] font-semibold text-white">
               Subir, baixar ou manter: decida cada preço vendo o porquê.
             </h1>
             <p className="mt-3 max-w-md text-base text-white">
@@ -94,8 +87,8 @@ export default function Entrar() {
         </section>
 
         <section className="flex min-h-0 flex-col overflow-y-auto px-5 py-6 sm:px-10 lg:px-12">
-          <Image src="/logo-popular-pet.png" alt="Popular Pet" width={120} height={29} className="mb-6 lg:hidden" />
           <div className="mx-auto my-auto w-full max-w-[420px]">
+            <Image src="/logo-popular-pet.png" alt="Popular Pet" width={132} height={32} priority className="mb-6" />
             <h2 className="font-display text-2xl font-semibold">Entrar no Pet Pricing</h2>
             <p className="mt-1 text-sm text-suave">Na demonstração não há senha. Cada visitante trabalha na própria cópia da base.</p>
 
