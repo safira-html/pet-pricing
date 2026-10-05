@@ -41,7 +41,8 @@ class PostgresSessionStore:
     _last_cleanup: float = field(default=0.0, init=False)
 
     def _connect(self) -> psycopg.Connection:
-        con = psycopg.connect(self.dsn, row_factory=dict_row, connect_timeout=10)
+        # prepare_threshold=None: compatível com o pooler (PgBouncer) do Neon em modo transação.
+        con = psycopg.connect(self.dsn, row_factory=dict_row, connect_timeout=10, prepare_threshold=None)
         if not self._ready:
             with con.transaction():
                 con.execute(SCHEMA)
