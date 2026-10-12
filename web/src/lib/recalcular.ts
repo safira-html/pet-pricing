@@ -1,6 +1,6 @@
 import type { Alerta, Escopo, ParametrosBase, Recomendacao, RegraPreco } from "./types";
 import { PARAMETROS_PADRAO } from "./types";
-import { DEFAULT_MARGIN_FORMULA, marginInputs, type MarginFormula } from "./margin";
+import { DEFAULT_MARGIN_FORMULA, ENGINE_MARGIN_FORMULA, marginInputs, type MarginFormula } from "./margin";
 
 /**
  * Prévia do efeito de regras por grupo e de parâmetros mais rígidos.
@@ -8,7 +8,7 @@ import { DEFAULT_MARGIN_FORMULA, marginInputs, type MarginFormula } from "./marg
  * (margem de contribuição, piso arredondado para cima, peso de mercado 0,5,
  * neutralidade de 0,5%, margem mínima mais protetora prevalece).
  * Única diferença de propósito: com params.tetoMercado ligado, o preço sugerido não passa da mediana do mercado.
- * Com formula = "gross", a mesma conta roda sobre a margem bruta (só custo de reposição, sem taxa).
+ * Com formula = "gross" (o padrão desde a Semana 4), a mesma conta roda sobre a margem bruta (só custo de reposição, sem taxa).
  * É uma prévia: o cálculo oficial roda no backend.
  */
 const RANK: Record<Escopo, number> = { todos: 0, curva: 1, categoria: 2, marca: 2, canal: 2, sku: 3 };
@@ -38,7 +38,7 @@ export function recalcular(
   const aplicaveis = regras
     .filter((g) => vigente(g, r.data_referencia) && cobreRegra(g, r))
     .sort((a, b) => RANK[b.escopo] - RANK[a.escopo] || b.prioridade - a.prioridade);
-  if (!forcar && formula === DEFAULT_MARGIN_FORMULA && !aplicaveis.length && igualPadrao(params) && !estrategicos.includes(r.sku)) return r;
+  if (!forcar && formula === ENGINE_MARGIN_FORMULA && !aplicaveis.length && igualPadrao(params) && !estrategicos.includes(r.sku)) return r;
 
   const vencedora = aplicaveis[0];
   const minima = Math.max(r.margem.minima, ...aplicaveis.map((g) => g.margemMinima));

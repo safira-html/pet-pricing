@@ -114,6 +114,7 @@ export default function Regras() {
         <p className="mt-3 text-xs text-suave">
           {rampa.length} {rampa.length === 1 ? "item precisa" : "itens precisam"} de rampa com a fórmula em uso.
           {p.marginFormula === "contribution" && " O marketplace concentra os casos de mais etapas, porque a taxa do canal é de 12%."}
+          {p.marginFormula === "gross" && " Pela margem bruta o preço mínimo cabe no limite de variação; a rampa aparece quando se escolhe a contribuição."}
         </p>
       </Card>
 
@@ -172,7 +173,7 @@ function FormulaMargem({ gestor }: { gestor: boolean }) {
       <div id="margem" className="scroll-mt-6" />
       <Titulo eyebrow="Decisão do grupo">Qual margem vale?</Titulo>
       <p className="max-w-[68ch] text-sm text-texto">
-        Escolha a validar com o time e o mentor. O material do desafio não define a fórmula: o dicionário da base descreve a margem mínima só como “piso de margem”. A escolha muda quase tudo. O padrão é a margem de contribuição, porque o desafio lista impostos, frete e taxa do canal em “Custos e margem” e pede para considerar as diferenças entre canais.
+        O material do desafio não define a fórmula: o dicionário da base descreve a margem mínima só como “piso de margem”. A escolha muda quase tudo, inclusive os valores em reais por mês. O padrão é a margem bruta sobre a reposição, porque é a única em que os preços atuais da base cumprem o mínimo (0 de 120 abaixo, contra 120 de 120 pela contribuição) e porque o deck da Semana 2 e os dois testadores a usaram. Ela ignora a taxa do canal, então a contribuição fica disponível como visão conservadora. Decisão do grupo, a validar com o mentor.
       </p>
 
       <div className="mt-4 grid gap-4 md:grid-cols-2" role="radiogroup" aria-label="Fórmula de margem">
@@ -198,7 +199,7 @@ function FormulaMargem({ gestor }: { gestor: boolean }) {
             >
               <span className="flex flex-wrap items-center gap-2">
                 {emUso && <span className="inline-flex items-center gap-1 rounded-full bg-roxo px-2 py-0.5 text-xs font-semibold text-white"><Check size={12} aria-hidden /> Em uso</span>}
-                {f === "contribution" && <span className="rounded-full bg-limao-100 px-2 py-0.5 text-xs font-semibold text-limao-700">Recomendada</span>}
+                {f === "gross" && <span className="rounded-full bg-limao-100 px-2 py-0.5 text-xs font-semibold text-limao-700">Recomendada</span>}
               </span>
               <span className="mt-2 block font-display text-lg font-semibold text-tinta">{info.label}</span>
               <span className="mt-1 block text-xs text-suave">{info.formula}</span>

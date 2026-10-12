@@ -1,5 +1,5 @@
 import type { Decisao, Recomendacao } from "./types";
-import { DEFAULT_MARGIN_FORMULA, marginAt } from "./margin";
+import { ENGINE_MARGIN_FORMULA, marginAt } from "./margin";
 
 export const FAIXA_COMPETITIVA = 0.02;
 
@@ -11,7 +11,7 @@ export function precoVigente(r: Recomendacao, decisoes: Decisao[]) {
 }
 
 export function margemCom(r: Recomendacao, preco: number) {
-  return marginAt(r, preco, r.margin_formula ?? DEFAULT_MARGIN_FORMULA);
+  return marginAt(r, preco, r.margin_formula ?? ENGINE_MARGIN_FORMULA);
 }
 
 export function metricas(recs: Recomendacao[], decisoes: Decisao[]) {

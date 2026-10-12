@@ -1,10 +1,10 @@
 // Metas da Semana 2 medidas com o motor/prévia: faixa competitiva (±2% da mediana) antes e depois de aplicar as sugestões que não pedem revisão.
 import { readFileSync } from "node:fs";
 import { recalculateAll } from "../src/lib/recalcular";
-import { PARAMETROS_PADRAO } from "../src/lib/types";
+import { PARAMETROS_PADRAO, type Recomendacao } from "../src/lib/types";
 for (const cen of ["oficial", "sintetico"]) {
   const d = JSON.parse(readFileSync(`./src/data/${cen}.json`, "utf8"));
-  const antes = d.recomendacoes.filter((r: any) => r.preco_mercado != null && Math.abs(r.preco_atual / r.preco_mercado - 1) <= 0.02).length;
+  const antes = d.recomendacoes.filter((r: Recomendacao) => r.preco_mercado != null && Math.abs(r.preco_atual / r.preco_mercado - 1) <= 0.02).length;
   console.log(cen, "faixa competitiva hoje:", antes, "/", d.recomendacoes.length, `(${(antes / d.recomendacoes.length * 100).toFixed(0)}%)`);
   for (const f of ["contribution", "gross"] as const) for (const teto of [false, true]) {
     const out = recalculateAll(d.recomendacoes, [], { ...PARAMETROS_PADRAO, tetoMercado: teto }, [], f, true);

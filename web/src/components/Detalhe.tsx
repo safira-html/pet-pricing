@@ -10,7 +10,7 @@ import { api, type ExplainResult } from "@/lib/api";
 import { explicar, fraseAlerta, rotuloAlerta } from "@/lib/explain";
 import { dataBR, dataHoraBR, inteiro, mesCurto, moeda, pct } from "@/lib/format";
 import { profitChange, verb, VERDICT_LABEL } from "@/lib/impact";
-import { DEFAULT_MARGIN_FORMULA, MARGIN_FORMULAS, marginAt, type MarginFormula } from "@/lib/margin";
+import { ENGINE_MARGIN_FORMULA, MARGIN_FORMULAS, marginAt, type MarginFormula } from "@/lib/margin";
 import { usePricing } from "@/lib/store";
 import type { Recomendacao } from "@/lib/types";
 
@@ -188,7 +188,7 @@ function ResultadoEAprendizado({ r }: { r: Recomendacao }) {
 }
 
 function CustoMargem({ r }: { r: Recomendacao }) {
-  const formula = r.margin_formula ?? DEFAULT_MARGIN_FORMULA;
+  const formula = r.margin_formula ?? ENGINE_MARGIN_FORMULA;
   const outra: MarginFormula = formula === "contribution" ? "gross" : "contribution";
   const taxa = r.preco_atual * r.custo.taxa_canal;
   const partes = [

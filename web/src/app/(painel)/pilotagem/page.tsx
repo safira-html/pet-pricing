@@ -8,6 +8,7 @@ import { Select } from "@/components/Select";
 import { AcaoBadge, Botao, Card, Confirmar, SinteticoTag, Titulo, Vazio } from "@/components/ui";
 import { dataHoraBR, moeda, pct } from "@/lib/format";
 import { cobre, descreverRegra, usePricing } from "@/lib/store";
+import { estimateReviewTime, hoursText, TIME_ASSUMPTIONS } from "@/lib/tempo";
 import type { Canal, Recomendacao, RegraPiloto } from "@/lib/types";
 
 const CANAIS: Canal[] = ["Loja física", "E-commerce", "Marketplace"];
@@ -49,6 +50,15 @@ export default function Pilotagem() {
   const excecoes = p.recs.filter((r) => p.origemModo(r.id) === "exceção");
   const cobertosNova = p.recs.filter((r) => cobre(nova, r));
   const elegNova = cobertosNova.filter((r) => p.eligibility(r).elegivel);
+  const elegiveisHoje = new Set(emAuto.filter((r) => p.eligibility(r).elegivel).map((r) => r.id));
+  const elegiveisTodos = new Set(p.recs.filter((r) => p.eligibility(r).elegivel).map((r) => r.id));
+  const tempo = useMemo(
+    () => ({
+      hoje: estimateReviewTime(p.recs, elegiveisHoje),
+      potencial: estimateReviewTime(p.recs, elegiveisTodos),
+    }),
+    [p.recs, p.modoDe, p.eligibility], // eslint-disable-line react-hooks/exhaustive-deps
+  );
   const veto = p.agendamentos.filter((a) => a.origem === "piloto automático" && a.status === "aguardando veto");
 
   return (
@@ -160,6 +170,34 @@ export default function Pilotagem() {
           ))}
         </Card>
       </div>
+
+      <Card>
+        <Titulo eyebrow="Estimativa simulada">Quanto tempo de revisão o piloto automático tira da semana</Titulo>
+        <p className="max-w-[68ch] text-sm text-texto">
+          Base de {tempo.hoje.items} itens revisados toda semana. À mão, a linha de base da Semana 2 é de {hoursText(tempo.hoje.manualMin)}. Com o copiloto, os itens chegam priorizados e explicados. O piloto automático tira da fila os itens de menor risco, que só precisam de um olhar na fila de veto.
+        </p>
+        <div className="mt-4 space-y-3">
+          {[
+            { rotulo: "À mão", min: tempo.hoje.manualMin, cor: "bg-linha-forte" },
+            { rotulo: "Com o copiloto", min: tempo.hoje.copilotMin, cor: "bg-roxo" },
+            { rotulo: `Piloto nas regras de hoje (${tempo.hoje.auto} ${tempo.hoje.auto === 1 ? "item" : "itens"})`, min: tempo.hoje.autopilotMin, cor: "bg-subir" },
+            { rotulo: `Piloto em todos os elegíveis (${tempo.potencial.auto} ${tempo.potencial.auto === 1 ? "item" : "itens"})`, min: tempo.potencial.autopilotMin, cor: "bg-subir" },
+          ].map((l) => (
+            <div key={l.rotulo}>
+              <div className="flex items-baseline justify-between gap-3 text-sm">
+                <span className="text-tinta">{l.rotulo}</span>
+                <span className="num font-semibold text-tinta">{hoursText(l.min)} por semana</span>
+              </div>
+              <div className="mt-1 h-2 rounded-full bg-fundo" role="img" aria-label={`${l.rotulo}: ${hoursText(l.min)} por semana`}>
+                <div className={clsx("h-2 rounded-full", l.cor)} style={{ width: `${Math.max(2, (l.min / tempo.hoje.manualMin) * 100)}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-4 text-xs text-suave">
+          Premissas por item: {TIME_ASSUMPTIONS.manualMinPerItem} min à mão; {TIME_ASSUMPTIONS.quickMin} min na aprovação rápida; {TIME_ASSUMPTIONS.reasonMin} min quando pede motivo ou revisão; {TIME_ASSUMPTIONS.rampMin} min na rampa; {TIME_ASSUMPTIONS.autoGlanceMin * 60} s por item do piloto na fila de veto. Não é uma medição: precisa de uma pessoa de pricing para confirmar. O ganho do piloto cresce com o número de produtos, porque é o volume de itens simples que deixa de passar por uma pessoa.
+        </p>
+      </Card>
 
       <Card>
         <Titulo eyebrow={p.piloto.ligado ? "Agendamento automático" : "Prévia"}>

@@ -26,8 +26,8 @@ const BASES: Record<Cenario, { titulo: string; texto: string }> = {
 
 /** Roteiro para a banca: a ordem importa, porque cada passo usa o anterior. */
 const TRILHA = [
-  { titulo: "Ver o tamanho do problema", texto: "Na visão geral, a base oficial mostra quantos itens estão abaixo da margem mínima.", href: "/" },
-  { titulo: "Comparar as fórmulas de margem", texto: "Em Regras e margem, veja como a escolha entre contribuição e margem bruta muda o resultado.", href: "/regras#margem" },
+  { titulo: "Ver o tamanho do problema", texto: "Na visão geral, a base oficial mostra quantos preços estão fora da faixa competitiva (±2% da mediana do mercado) e quanto de margem está em jogo.", href: "/" },
+  { titulo: "Comparar as fórmulas de margem", texto: "Em Regras e margem, veja como a escolha entre margem bruta (padrão) e contribuição muda o resultado.", href: "/regras#margem" },
   { titulo: "Trocar para os cenários sintéticos", texto: "Use o botão abaixo. Aparecem itens para baixar e manter.", href: "/base" },
   { titulo: "Aprovar em um clique", texto: "No grupo Aprovação rápida, aprove o sachê da loja física e veja o aviso com Desfazer.", href: "/fila?grupo=rapida" },
   { titulo: "Ligar o piloto automático", texto: "Em Pilotagem, ligue a chave, suba o teto para 4% e crie a regra “curva B em qualquer canal”: o piloto agenda sozinho. Depois vete uma das mudanças.", href: "/pilotagem" },

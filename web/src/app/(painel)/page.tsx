@@ -39,7 +39,11 @@ export default function Overview() {
   const quick = pending.filter((r) => queueGroup(r, false) === "rapida");
   const gains = new Map(pending.map((r) => [r.id, r.acao === "SUBIR" || r.acao === "BAIXAR" ? monthlyGain(r, p.elasticity) : null]));
   const atStake = [...gains.values()].reduce<number>((s, g) => s + (g ?? 0), 0);
-  const belowMin = p.recs.filter((r) => r.margem.atual < r.margem.minima - 1e-9).length;
+  const gainBy = (acao: Acao) => pending.reduce((s, r) => s + (r.acao === acao ? gains.get(r.id) ?? 0 : 0), 0);
+  const atStakeUp = gainBy("SUBIR");
+  const atStakeDown = gainBy("BAIXAR");
+  const comMercado = p.recs.filter((r) => r.preco_mercado != null);
+  const foraDaFaixa = comMercado.filter((r) => Math.abs(r.preco_atual / r.preco_mercado! - 1) > FAIXA_COMPETITIVA).length;
   const humanDecisions = p.decisoes.filter((d) => d.perfil !== "sistema" && d.segundosAteDecidir != null);
   const avgSeconds = humanDecisions.length ? humanDecisions.reduce((s, d) => s + (d.segundosAteDecidir ?? 0), 0) / humanDecisions.length : null;
   const canQuickApprove = (r: Recomendacao) => p.pode("decidir") && queueGroup(r, false) === "rapida" && (r.risco !== "Alto" || p.pode("risco_alto"));
@@ -83,10 +87,10 @@ export default function Overview() {
       <div className="grid gap-4 sm:grid-cols-3">
         <Stat label="Preços para decidir" value={inteiro(pending.length)}
           hint={avgSeconds ? `cerca de ${Math.max(1, Math.round((pending.length * avgSeconds) / 60))} min no seu ritmo atual` : `${quick.length} com aprovação em um clique`} />
-        <Stat label="Margem em jogo por mês" value={moeda(atStake)} tone={atStake >= 0 ? "text-subir" : "text-piso"}
-          hint="se as sugestões de subir e baixar forem aprovadas (estimativa)" />
-        <Stat label="Itens abaixo da margem mínima" value={`${inteiro(belowMin)} de ${p.recs.length}`} tone={belowMin ? "text-piso" : "text-tinta"}
-          hint={MARGIN_FORMULAS[p.marginFormula].label.toLowerCase()} href="/regras#margem" />
+        <Stat label="Efeito estimado na margem por mês" value={moeda(atStake)} tone={atStake >= 0 ? "text-subir" : "text-piso"}
+          hint={`subir ${moeda(atStakeUp)} · baixar ${moeda(atStakeDown)} se tudo for aprovado (estimativa)`} />
+        <Stat label="Preços fora da faixa competitiva" value={`${inteiro(foraDaFaixa)} de ${comMercado.length}`} tone={foraDaFaixa ? "text-piso" : "text-tinta"}
+          hint={`±2% da mediana do mercado · margem: ${MARGIN_FORMULAS[p.marginFormula].label.toLowerCase()}`} href="/regras#margem" />
       </div>
 
       {/* As perguntas do desafio, cada uma levando para a fila filtrada */}

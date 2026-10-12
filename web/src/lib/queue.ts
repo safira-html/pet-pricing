@@ -1,5 +1,5 @@
 import type { Recomendacao } from "./types";
-import { DEFAULT_MARGIN_FORMULA, unitProfit } from "./margin";
+import { ENGINE_MARGIN_FORMULA, unitProfit } from "./margin";
 import { recentMonthlyUnits } from "./impact";
 
 export type QueueGroup = "rapida" | "motivo" | "rampa" | "decididas";
@@ -18,7 +18,7 @@ export function queueGroup(r: Recomendacao, decided: boolean): QueueGroup {
  */
 export function monthlyGain(r: Recomendacao, elasticity: Record<string, number>, price: number | null = r.preco_sugerido): number | null {
   if (price == null || Math.abs(price - r.preco_atual) < 0.005) return null;
-  const formula = r.margin_formula ?? DEFAULT_MARGIN_FORMULA;
+  const formula = r.margin_formula ?? ENGINE_MARGIN_FORMULA;
   const units = recentMonthlyUnits(r);
   const expected = units * (price / r.preco_atual) ** (elasticity[r.categoria] ?? -1);
   return expected * unitProfit(r, price, formula) - units * unitProfit(r, r.preco_atual, formula);
