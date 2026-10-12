@@ -33,7 +33,8 @@ const STATUS: Record<string, { estado: "ativa" | "parcial" | "sem dados"; nota: 
 };
 
 /** Parâmetros que o gestor pode deixar mais rígidos e que a prévia já recalcula. */
-const AJUSTAVEIS: Partial<Record<keyof ParametrosBase, { rotulo: string; unidade: "%" | "dias"; passo: number; min: number; max: number }>> = {
+type ParametroNumerico = Exclude<keyof ParametrosBase, "tetoMercado">;
+const AJUSTAVEIS: Partial<Record<ParametroNumerico, { rotulo: string; unidade: "%" | "dias"; passo: number; min: number; max: number }>> = {
   R02: { rotulo: "Variação máxima por decisão", unidade: "%", passo: 0.005, min: 0.01, max: PARAMETROS_PADRAO.R02 },
   R03: { rotulo: "Variação que pede aprovação na curva A", unidade: "%", passo: 0.005, min: 0.005, max: PARAMETROS_PADRAO.R03 },
   R07: { rotulo: "Diferença máxima entre loja física e e-commerce", unidade: "%", passo: 0.005, min: 0.01, max: PARAMETROS_PADRAO.R07 },
@@ -114,6 +115,26 @@ export default function Regras() {
           {rampa.length} {rampa.length === 1 ? "item precisa" : "itens precisam"} de rampa com a fórmula em uso.
           {p.marginFormula === "contribution" && " O marketplace concentra os casos de mais etapas, porque a taxa do canal é de 12%."}
         </p>
+      </Card>
+
+      <Card>
+        <div id="teto-mercado" className="scroll-mt-6" />
+        <Titulo eyebrow="Proposta da V2">Teto de mercado</Titulo>
+        <div className="flex items-start justify-between gap-6">
+          <div>
+            <p className="max-w-[68ch] text-sm text-texto">
+              O motor original sobe o preço em direção à margem alvo e, por isso, pode sugerir um preço acima da mediana dos concorrentes mesmo quando a margem mínima já está garantida. Com o teto ligado, a sugestão de subir para na mediana do mercado. A margem mínima (R01) continua mandando: se ela exigir um preço acima do mercado, o preço mínimo prevalece.
+            </p>
+            <p className="mt-2 text-xs text-suave">
+              Sugerido pelo teste da Semana 4: em 24 respostas de revisão manual, ninguém escolheu subir acima do mercado. {p.parametros.tetoMercado ? "Ligado." : "Desligado: vale o comportamento do motor original."}
+            </p>
+          </div>
+          <button role="switch" aria-checked={p.parametros.tetoMercado} aria-label="Ligar teto de mercado" disabled={!gestor}
+            onClick={() => p.definirTetoMercado(!p.parametros.tetoMercado)}
+            className={clsx("relative h-8 w-14 shrink-0 rounded-full transition-colors duration-200 disabled:opacity-45", p.parametros.tetoMercado ? "bg-subir" : "bg-linha-forte")}>
+            <span className={clsx("absolute top-1 left-1 size-6 rounded-full bg-white shadow transition-transform duration-200 ease-[var(--ease-out)]", p.parametros.tetoMercado && "translate-x-6")} />
+          </button>
+        </div>
       </Card>
 
       <Card>
@@ -274,13 +295,13 @@ function LinhaRegra({ g, gestor, onEditar }: { g: RegraPreco; gestor: boolean; o
 function LinhaRegraBase({ id, tema, regra, ocorrencias, gestor }: { id: string; tema: string; regra: string; ocorrencias: number; gestor: boolean }) {
   const p = usePricing();
   const st = STATUS[id];
-  const ajuste = AJUSTAVEIS[id as keyof ParametrosBase];
+  const ajuste = AJUSTAVEIS[id as ParametroNumerico];
   const [aberto, setAberto] = useState(false);
-  const atual = ajuste ? p.parametros[id as keyof ParametrosBase] : null;
+  const atual = ajuste ? p.parametros[id as ParametroNumerico] : null;
   const [valor, setValor] = useState<number>(atual ?? 0);
   const [skus, setSkus] = useState<string[]>(p.estrategicos);
   const [motivo, setMotivo] = useState("");
-  const alterado = ajuste && atual !== PARAMETROS_PADRAO[id as keyof ParametrosBase];
+  const alterado = ajuste && atual !== PARAMETROS_PADRAO[id as ParametroNumerico];
   const ehR04 = id === "R04";
   const podeAjustar = gestor && (!!ajuste || ehR04);
 
@@ -290,7 +311,7 @@ function LinhaRegraBase({ id, tema, regra, ocorrencias, gestor }: { id: string; 
   );
 
   const salvar = () => {
-    if (ajuste) p.definirParametro(id as keyof ParametrosBase, valor, motivo.trim());
+    if (ajuste) p.definirParametro(id as ParametroNumerico, valor, motivo.trim());
     if (ehR04) p.definirEstrategicos(skus, motivo.trim());
     setAberto(false);
     setMotivo("");
@@ -337,7 +358,7 @@ function LinhaRegraBase({ id, tema, regra, ocorrencias, gestor }: { id: string; 
               <input type="range" min={ajuste.min} max={ajuste.max} step={ajuste.passo} value={valor}
                 onChange={(e) => setValor(Number(e.target.value))} className="mt-2 block w-full max-w-md accent-[var(--roxo)]" />
               <span className="mt-1 block text-xs font-normal text-suave">
-                Na base: {fmtParam(PARAMETROS_PADRAO[id as keyof ParametrosBase], ajuste.unidade)}. Só é possível deixar mais rígido.
+                Na base: {fmtParam(PARAMETROS_PADRAO[id as ParametroNumerico], ajuste.unidade)}. Só é possível deixar mais rígido.
               </span>
             </label>
           )}

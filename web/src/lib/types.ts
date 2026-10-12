@@ -167,9 +167,11 @@ export interface ParametrosBase {
   R08: number;
   R10: number;
   R11: number;
+  /** Proposta da V2: o preço sugerido nunca passa da mediana do mercado (a margem mínima continua mandando). */
+  tetoMercado: boolean;
 }
 
-export const PARAMETROS_PADRAO: ParametrosBase = { R02: 0.05, R03: 0.03, R06: 48, R07: 0.05, R08: 3, R10: 0.2, R11: 15 };
+export const PARAMETROS_PADRAO: ParametrosBase = { R02: 0.05, R03: 0.03, R06: 48, R07: 0.05, R08: 3, R10: 0.2, R11: 15, tetoMercado: true };
 
 export type OutcomeVerdict = "improved" | "neutral" | "worsened";
 

@@ -52,6 +52,11 @@ export function fraseAlerta(a: Alerta, r?: Recomendacao): string {
   return t.replace(/^R\d+:\s*/, "");
 }
 
+/** A sugestão parou na mediana do mercado porque o preço ideal passaria dela (teto de mercado). */
+export function limitadoAoMercado(r: Recomendacao): boolean {
+  return r.preco_sugerido != null && r.preco_mercado != null && r.preco_alvo > r.preco_mercado && Math.abs(r.preco_sugerido - r.preco_mercado) < 0.006;
+}
+
 /** Posição do preço atual frente ao mercado. */
 export function posicaoMercado(r: Recomendacao): "acima" | "abaixo" | "alinhado" | "sem mercado" {
   if (r.diferenca_mercado == null) return "sem mercado";
@@ -80,6 +85,10 @@ export function explicar(r: Recomendacao): string[] {
   );
   if (r.preco_sugerido != null && r.acao !== "REVISAR") {
     if (r.acao === "MANTER") linhas.push("A diferença para o preço ideal é menor que 0,5%, então o melhor é manter.");
+    else if (limitadoAoMercado(r))
+      linhas.push(
+        `Sugestão: ${moeda(r.preco_sugerido)} (${pct(r.variacao, 1, true)}), limitada à mediana do mercado (${moeda(r.preco_mercado!)}). O preço ideal pela margem alvo seria ${moeda(r.preco_alvo)}, mas passaria do mercado.`,
+      );
     else
       linhas.push(
         `Sugestão: ${moeda(r.preco_sugerido)} (${pct(r.variacao, 1, true)}), equilibrando a margem alvo (${moeda(r.preco_alvo)}) e o mercado, dentro do limite de ${limiteTxt(r)}.`,
@@ -117,6 +126,7 @@ export function manchete(r: Recomendacao): string {
   if (r.acao === "SUBIR") {
     const porque = r.margem.atual < r.margem.minima
       ? `a margem está em ${pct(r.margem.atual)}, abaixo da mínima de ${pct(r.margem.minima)}`
+      : limitadoAoMercado(r) ? `o preço está ${difMercado} abaixo do mercado e a sugestão para na mediana de ${moeda(r.preco_mercado!)}`
       : pos === "abaixo" ? `o preço está ${difMercado} abaixo do mercado` : `há espaço até o preço ideal de ${moeda(r.preco_alvo)}`;
     return `Subir ${pct(r.variacao ?? 0)} para ${moeda(r.preco_sugerido)}: ${porque}.`;
   }

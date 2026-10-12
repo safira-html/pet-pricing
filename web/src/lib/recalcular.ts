@@ -7,6 +7,7 @@ import { DEFAULT_MARGIN_FORMULA, marginInputs, type MarginFormula } from "./marg
  * Espelha src/pricing_engine.py e src/rule_engine.py do motor do Allan
  * (margem de contribuição, piso arredondado para cima, peso de mercado 0,5,
  * neutralidade de 0,5%, margem mínima mais protetora prevalece).
+ * Única diferença de propósito: com params.tetoMercado ligado, o preço sugerido não passa da mediana do mercado.
  * Com formula = "gross", a mesma conta roda sobre a margem bruta (só custo de reposição, sem taxa).
  * É uma prévia: o cálculo oficial roda no backend.
  */
@@ -27,7 +28,7 @@ export function vigente(g: RegraPreco, referencia: string) {
 }
 
 function igualPadrao(p: ParametrosBase) {
-  return (Object.keys(PARAMETROS_PADRAO) as (keyof ParametrosBase)[]).every((k) => p[k] === PARAMETROS_PADRAO[k]);
+  return (Object.keys(PARAMETROS_PADRAO) as (keyof ParametrosBase)[]).every((k) => p[k] === PARAMETROS_PADRAO[k]) && !p.tetoMercado;
 }
 
 export function recalcular(
@@ -50,7 +51,10 @@ export function recalcular(
 
   const piso = up2(custo / (1 - taxa - minima));
   const precoAlvo = custo / (1 - taxa - alvo);
-  const candidato = r.preco_mercado == null ? precoAlvo : precoAlvo * 0.5 + r.preco_mercado * 0.5;
+  const candidatoMotor = r.preco_mercado == null ? precoAlvo : precoAlvo * 0.5 + r.preco_mercado * 0.5;
+  // Teto de mercado (V2): o motor sobe em direção ao preço alvo mesmo acima da mediana; aqui para na mediana.
+  // O piso de margem continua prevalecendo, porque `inferior` entra depois no max.
+  const candidato = params.tetoMercado && r.preco_mercado != null ? Math.min(candidatoMotor, r.preco_mercado) : candidatoMotor;
   const inferior = Math.max(piso, up2(atual * (1 - desce)));
   const superior = down2(atual * (1 + sobe));
 

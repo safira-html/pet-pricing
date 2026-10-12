@@ -10,7 +10,7 @@ for (const cen of ["oficial", "sintetico"]) {
   const d = JSON.parse(readFileSync(`./src/data/${cen}.json`, "utf8"));
   for (const formula of ["contribution", "gross"] as const) {
     let ok = 0; const erros: string[] = [];
-    const todos = recalculateAll(d.recomendacoes, [], PARAMETROS_PADRAO, [], formula, true);
+    const todos = recalculateAll(d.recomendacoes, [], { ...PARAMETROS_PADRAO, tetoMercado: false }, [], formula, true);
     for (const [i, r] of d.recomendacoes.entries()) {
       const ref = formula === "gross" ? gross[cen][r.id] : r;
       const x = todos[i];

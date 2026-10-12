@@ -138,7 +138,8 @@ interface Ctx extends Estado {
   salvarRegraPreco: (g: Omit<RegraPreco, "id" | "autor" | "atualizadaEm"> & { id?: string }) => void;
   alternarRegraPreco: (id: string) => void;
   removerRegraPreco: (id: string) => void;
-  definirParametro: (cod: keyof ParametrosBase, valor: number, motivo: string) => void;
+  definirParametro: (cod: Exclude<keyof ParametrosBase, "tetoMercado">, valor: number, motivo: string) => void;
+  definirTetoMercado: (ligado: boolean) => void;
   definirEstrategicos: (skus: string[], motivo: string) => void;
   configurarPiloto: (c: Partial<ConfigPiloto>) => void;
   marcarAbertura: (recId: string) => void;
@@ -629,6 +630,11 @@ export function ProvedorPricing({ children }: { children: ReactNode }) {
         const g = estado.regrasPreco.find((x) => x.id === id);
         setEstado((s) => cancelarPiloto({ ...s, regrasPreco: s.regrasPreco.filter((x) => x.id !== id) }));
         if (g) registrar({ autor, tipo: "configuração", texto: `removeu a regra de preço “${g.nome}”.` });
+        avisarCancelamento();
+      },
+      definirTetoMercado: (ligado) => {
+        setEstado((s) => cancelarPiloto({ ...s, parametros: { ...s.parametros, tetoMercado: ligado } }));
+        registrar({ autor, tipo: "configuração", texto: `${ligado ? "ligou" : "desligou"} o teto de mercado: ${ligado ? "a sugestão não passa da mediana dos concorrentes" : "a sugestão volta a equilibrar margem alvo e mercado, como no motor original"}.` });
         avisarCancelamento();
       },
       definirParametro: (cod, valor, motivo) => {
