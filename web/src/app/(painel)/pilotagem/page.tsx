@@ -220,9 +220,7 @@ export default function Pilotagem() {
             <Vazio titulo="Nada seria agendado">
               {emAuto.length === 0
                 ? "Crie uma regra de grupo acima para colocar itens em piloto automático."
-                : p.cenario === "oficial" && p.marginFormula === "contribution"
-                  ? "Pela margem de contribuição, todo item da base oficial tem alguma regra que pede uma pessoa. Para ver o piloto automático agindo, use a margem bruta ou os cenários sintéticos."
-                  : "Os itens em piloto automático não passam pelas proteções hoje. Aumente a variação máxima ou crie outra regra."}
+                : "Os itens em piloto automático não passam pelas proteções hoje: a recomendação não é subir ou baixar, uma regra pede uma pessoa ou a variação passa do teto. Aumente a variação máxima ou crie outra regra."}
             </Vazio>
           </div>
         ) : (
